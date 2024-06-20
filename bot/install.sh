@@ -6,7 +6,7 @@
 # atendimento na VPS.                                                          #
 #                                                                              #
 # Requisitos:                                                                  #
-# - Node.js e npm instalados (versão >= 18)                                     #
+# - Node.js e npm instalados (versão >= 18)                                    #
 # - Git instalado                                                              #
 # - Acesso à internet para clonar o repositório do GitHub                      #
 # - Acesso ao WhatsApp Web para escanear o código QR                           #
@@ -24,7 +24,9 @@ if ! command -v node &> /dev/null || ! command -v npm &> /dev/null || [[ $(node 
     print_status "Instalando Node.js e npm (versão 18.x)..."
     # Instalação do Node.js 18.x com nvm (Node Version Manager)
     curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | bash
-    source ~/.bashrc
+    export NVM_DIR="$HOME/.nvm"
+    [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # Isso carrega o nvm
+    [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # Isso carrega a conclusão bash do nvm
     nvm install 18
     nvm use 18
 fi
@@ -37,11 +39,23 @@ if ! command -v git &> /dev/null; then
     sudo apt install -y git
 fi
 
+# Instalar dependências do Chromium para Puppeteer
+print_status "Instalando dependências do Chromium..."
+sudo apt update
+sudo apt install -y \
+    libatk1.0-0 \
+    libatk-bridge2.0-0 \
+    libcups2 \
+    libxkbcommon-x11-0 \
+    libgbm1 \
+    libasound2 \
+    xdg-utils
+
 # Diretório onde o script está sendo executado
 base_dir=$(pwd)
 
 # Pasta onde o repositório será clonado (assumindo que é bot_what-main)
-project_dir="$base_dir/bot_what-main"
+project_dir="$base_dir/bot_what-main/bot"
 
 # Navegar até o diretório do projeto
 cd "$project_dir" || exit
