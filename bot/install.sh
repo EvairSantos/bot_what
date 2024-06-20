@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Instala os módulos necessários localmente
-npm install qrcode-terminal puppeteer readline-sync
+npm install qrcode-terminal puppeteer
 
 # Função para gerar e exibir o QR Code do WhatsApp Web
 print_qr_code() {
@@ -10,16 +10,15 @@ print_qr_code() {
     node - <<EOF
 const qrcode = require('qrcode-terminal');
 const puppeteer = require('puppeteer');
-const readlineSync = require('readline-sync');
 
 (async () => {
     const browser = await puppeteer.launch();
     const page = await browser.newPage();
+    
+    // Acessa o WhatsApp Web
     await page.goto('https://web.whatsapp.com');
 
-    console.log('Aguarde enquanto o QR Code do WhatsApp Web está sendo gerado...');
-
-    // Espera até que o QR Code apareça na tela
+    // Aguarda até que o QR Code apareça na tela
     await page.waitForSelector('canvas');
 
     // Captura o QR Code do WhatsApp Web
@@ -42,7 +41,7 @@ const readlineSync = require('readline-sync');
     // Aguarda até que o QR Code seja escaneado
     await page.waitForFunction('document.querySelector("canvas").style.display === "none"');
 
-    console.log('QR Code escaneado com sucesso. Continuando com a instalação...');
+    console.log('QR Code escaneado com sucesso.');
 
     await browser.close();
 })();
