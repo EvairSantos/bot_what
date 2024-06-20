@@ -117,18 +117,26 @@ async function adicionarBotWhatsApp() {
             await page.waitForSelector('._2Uw-r', { timeout: 60000 });
             console.log('Código QR escaneado com sucesso! WhatsApp Web conectado.');
 
-            // Exibir opções de confirmação
-            console.log('Pressione "Y" para confirmar ou "N" para gerar um novo QR code:');
-            readlineSync.promptCLLoop({
-                Y: function() {
-                    console.log('Bot adicionado com sucesso!');
-                    this.exit();
-                },
-                N: function() {
-                    console.log('Gerando um novo QR code...');
-                    adicionarBotWhatsApp(); // Tentar novamente
+            // Função para aguardar e processar comandos do usuário
+            async function waitForCommands() {
+                while (true) {
+                    const command = readlineSync.keyIn('', { hideEchoBack: true, mask: '', limit: 'y\n' });
+
+                    if (command === 'y') {
+                        console.log('Bot adicionado com sucesso!');
+                        break;
+                    } else if (command === 'n') {
+                        console.log('Gerando um novo QR code...');
+                        await page.reload();
+                        await adicionarBotWhatsApp(); // Tentar novamente
+                    } else {
+                        console.log('Opção inválida. Digite "y" para confirmar ou "n" para gerar um novo QR code.');
+                    }
                 }
-            });
+            }
+
+            // Iniciar a função para aguardar comandos
+            waitForCommands();
         } else {
             throw new Error('Não foi possível capturar o QR code.');
         }
@@ -139,7 +147,7 @@ async function adicionarBotWhatsApp() {
         if (error.message.includes('waiting for selector')) {
             console.log('Tentando novamente...');
             await page.reload();
-            adicionarBotWhatsApp(); // Tentar novamente
+            await adicionarBotWhatsApp(); // Tentar novamente
         }
     } finally {
         // Fecha o navegador
