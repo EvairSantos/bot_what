@@ -1,9 +1,9 @@
 #!/bin/bash
 
-# Instala o módulo qrcode-terminal localmente
-npm install qrcode-terminal
+# Instala os módulos qrcode-terminal e readline-sync localmente
+npm install qrcode-terminal readline-sync
 
-# Gera o QR Code do WhatsApp Web e exibe na tela
+# Função para gerar e exibir o QR Code do WhatsApp Web
 print_qr_code() {
     echo ">>> Gerando o QR Code do WhatsApp Web..."
     node - <<EOF
