@@ -18,22 +18,22 @@ if ! command -v npm &> /dev/null; then
     sudo apt-get install -y npm
 fi
 
-# Função para instalar ou atualizar o módulo qrcode-terminal globalmente
+# Instala o módulo qrcode-terminal localmente
 install_qrcode_terminal() {
-    if npm list -g qrcode-terminal &> /dev/null; then
-        print_status "Atualizando o módulo qrcode-terminal..."
-        sudo npm update -g qrcode-terminal
+    if [ ! -d "./node_modules/qrcode-terminal" ]; then
+        print_status "Instalando o módulo qrcode-terminal localmente..."
+        npm install qrcode-terminal
     else
-        print_status "Instalando o módulo qrcode-terminal..."
-        sudo npm install -g qrcode-terminal
+        print_status "Atualizando o módulo qrcode-terminal localmente..."
+        npm update qrcode-terminal
     fi
 }
 
-# Instala os pacotes necessários globalmente
-print_status "Instalando os pacotes necessários..."
-sudo npm install -g axios
+# Instala os pacotes necessários localmente
+print_status "Instalando os pacotes necessários localmente..."
+npm install axios
 
-# Instala ou atualiza o qrcode-terminal
+# Instala ou atualiza o qrcode-terminal localmente
 install_qrcode_terminal
 
 # Gera e exibe o QR Code
