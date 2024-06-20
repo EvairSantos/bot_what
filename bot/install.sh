@@ -84,7 +84,7 @@ const qrcode = require('qrcode-terminal');
 
 async function adicionarBotWhatsApp() {
     const browser = await puppeteer.launch({
-        headless: true, // Alterado para true para rodar headless
+        headless: true,
         args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-gpu']
     });
 
@@ -94,11 +94,10 @@ async function adicionarBotWhatsApp() {
         console.log('Navegando para o WhatsApp Web...');
         await page.goto('https://web.whatsapp.com', { waitUntil: 'networkidle0' });
 
-        // Aguardar a presença do QR code e capturar o conteúdo do data-ref
-        const qrContent = await page.evaluate(() => {
-            const qrElement = document.querySelector('div._akau');
-            return qrElement ? qrElement.getAttribute('data-ref') : null;
-        });
+        // Aguardar a presença do QR code por até 5 segundos
+        const qrContent = await page.waitForSelector('div._akau[data-ref]', { timeout: 5000 })
+            .then(qrElement => qrElement.getAttribute('data-ref'))
+            .catch(() => null);
 
         if (qrContent) {
             console.log('QR code capturado, exibindo no terminal...');
@@ -107,7 +106,7 @@ async function adicionarBotWhatsApp() {
             // Loop para monitorar a presença do QR code
             let qrStillVisible = true;
             while (qrStillVisible) {
-                // Esperar um intervalo antes de verificar novamente
+                // Esperar 1 segundo antes de verificar novamente
                 await new Promise(resolve => setTimeout(resolve, 1000));
 
                 qrStillVisible = await page.evaluate(() => {
