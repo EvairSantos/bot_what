@@ -140,7 +140,7 @@ async function adicionarBotWhatsApp() {
         if (error.message.includes('waiting for selector')) {
             console.log('Tentando novamente...');
             await page.reload();
-            return adicionarBotWhatsApp(); // Tentar novamente
+            await adicionarBotWhatsApp(); // Tentar novamente
         }
     } finally {
         // Fecha o navegador
