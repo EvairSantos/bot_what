@@ -7,7 +7,7 @@ async function adicionarBotWhatsApp() {
     try {
         browser = await puppeteer.launch({
             headless: false, // Altere para true para testes finais
-            args: ['--no-sandbox', '--disable-setuid-sandbox', '--display=:99']
+            args: ['--no-sandbox', '--disable-setuid-sandbox', , '--display=:99']
         });
         const page = await browser.newPage();
 
@@ -19,10 +19,17 @@ async function adicionarBotWhatsApp() {
         while (!qrCodeFound) {
             try {
                 console.log('Aguardando o QR code...');
-                await page.waitForSelector('canvas[data-ref]', { timeout: 60000 });
+                // Espera até que o elemento que contém o QR code seja visível
+                await page.waitForFunction(() => {
+                    const qrElement = document.querySelector('canvas');
+                    if (qrElement && qrElement.getAttribute('data-ref')) {
+                        return true;
+                    }
+                    return false;
+                }, { timeout: 60000 });
 
                 const qrContent = await page.evaluate(() => {
-                    const qrElement = document.querySelector('canvas[data-ref]');
+                    const qrElement = document.querySelector('canvas');
                     if (qrElement) {
                         return qrElement.getAttribute('data-ref');
                     }
@@ -36,7 +43,7 @@ async function adicionarBotWhatsApp() {
 
                     // Espera até que o QR code desapareça, indicando que foi lido
                     await page.waitForFunction(
-                        () => document.querySelector('canvas[data-ref]') === null,
+                        () => !document.querySelector('canvas'),
                         { timeout: 60000 }
                     );
 
