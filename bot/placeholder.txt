@@ -1,0 +1,16 @@
+version: '3'
+
+services:
+  whatsapp-pre-atendimento:
+    image: node:14
+    working_dir: /app
+    volumes:
+      - ./bot:/app
+    command: npm start
+    environment:
+      - NODE_ENV=production
+    ports:
+      - "3000:3000"
+    restart: always
+
+  # Adicionar outros serviços conforme necessário

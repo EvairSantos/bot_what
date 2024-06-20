@@ -1,0 +1,14 @@
+{
+    "name": "whatsapp-pre-atendimento",
+    "version": "1.0.0",
+    "description": "Aplicação para pré-atendimento via WhatsApp",
+    "main": "app.js",
+    "scripts": {
+      "start": "node app.js"
+    },
+    "dependencies": {
+      "express": "^4.17.1",
+      "dotenv": "^10.0.0"
+    }
+  }
+  
