@@ -7,7 +7,7 @@ async function adicionarBotWhatsApp() {
     try {
         browser = await puppeteer.launch({
             headless: false, // Altere para true para testes finais
-            args: ['--no-sandbox', '--disable-setuid-sandbox', , '--display=:99']
+            args: ['--no-sandbox', '--disable-setuid-sandbox', '--display=:99']
         });
         const page = await browser.newPage();
 
