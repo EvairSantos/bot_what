@@ -8,7 +8,7 @@
 # Requisitos:                                                                  #
 # - Node.js e npm instalados                                                  #
 # - Acesso à internet para clonar o repositório do GitHub                      #
-# - Acesso ao WhatsApp Web para escanear o código QR                           #
+# - Pacote qrcode-terminal para gerar o QR Code na linha de comando            #
 #                                                                              #
 # Uso: ./install.sh                                                            #
 ################################################################################
@@ -21,11 +21,23 @@ print_status() {
 # Diretório onde o script está sendo executado
 base_dir=$(pwd)
 
-# Pasta onde o repositório foi clonado (assumindo que é bot_what-main)
-project_dir="$base_dir/bot_what-main"
+# Download e extração do repositório bot_what
+print_status "Baixando e extraindo o repositório..."
+curl -fsSL https://github.com/EvairSantos/bot_what/archive/master.zip -o bot_what.zip
+unzip -q bot_what.zip
+project_dir="$base_dir/bot_what-master"
 
 # Navegar até o diretório do projeto
 cd "$project_dir" || exit
+
+# Verificar se o diretório bot já existe, se não, criar
+if [ ! -d "bot" ]; then
+    mkdir bot
+fi
+
+# Copiar todos os arquivos da pasta bot do repositório para o diretório bot
+print_status "Copiando arquivos para o diretório bot..."
+yes | cp -rf bot_what-master/bot/. bot/
 
 # Instalar as dependências do projeto
 print_status "Instalando as dependências..."
@@ -35,23 +47,16 @@ npm install
 print_status "Configurando o arquivo .env..."
 echo "PORT=3000" > .env
 
-# Abrir o WhatsApp Web para escanear o código QR
-print_status "Abrindo o WhatsApp Web para escanear o código QR..."
-npm install puppeteer
+# Gerar o QR Code na tela da VPS
+print_status "Gerando o código QR para escanear..."
+npm install qrcode-terminal
 
-# Script para abrir o WhatsApp Web (exemplo com puppeteer)
+# Script para gerar o QR Code na linha de comando
 node <<EOF
-const puppeteer = require('puppeteer');
+const qrcode = require('qrcode-terminal');
 
-async function abrirWhatsAppWeb() {
-    const browser = await puppeteer.launch();
-    const page = await browser.newPage();
-    await page.goto('https://web.whatsapp.com');
-
-    console.log('Escaneie o código QR com seu dispositivo móvel para continuar...');
-}
-
-abrirWhatsAppWeb();
+console.log('Escaneie o código QR com seu dispositivo móvel para continuar...');
+qrcode.generate('https://web.whatsapp.com');
 EOF
 
 print_status "Instalação concluída com sucesso!"
