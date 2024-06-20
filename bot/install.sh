@@ -17,7 +17,7 @@ const puppeteer = require('puppeteer');
     
     // Acessa o WhatsApp Web
     await page.goto('https://web.whatsapp.com');
-
+    
     // Aguarda até que o QR Code apareça na tela
     await page.waitForSelector('canvas');
 
