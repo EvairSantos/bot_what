@@ -1,19 +1,5 @@
 #!/bin/bash
 
-################################################################################
-# Script de Instalação do Projeto whatsapp-pre-atendimento                      #
-# Este script automatiza a instalação e configuração do projeto whatsapp-pre-  #
-# atendimento na VPS.                                                          #
-#                                                                              #
-# Requisitos:                                                                  #
-# - Node.js e npm instalados (versão >= 18)                                    #
-# - Git instalado                                                              #
-# - Acesso à internet para clonar o repositório do GitHub                      #
-# - Acesso ao WhatsApp Web para escanear o código QR                           #
-#                                                                              #
-# Uso: ./install.sh                                                            #
-################################################################################
-
 # Função para exibir mensagens de status
 print_status() {
     echo ">>> $1"
@@ -22,11 +8,10 @@ print_status() {
 # Verificar se o Node.js e npm estão instalados e na versão correta (>= 18)
 if ! command -v node &> /dev/null || ! command -v npm &> /dev/null || [[ $(node -v | cut -d'.' -f1 | awk '{print $1}') -lt 18 ]]; then
     print_status "Instalando Node.js e npm (versão 18.x)..."
-    # Instalação do Node.js 18.x com nvm (Node Version Manager)
     curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | bash
     export NVM_DIR="$HOME/.nvm"
-    [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # Isso carrega o nvm
-    [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # Isso carrega a conclusão bash do nvm
+    [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+    [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
     nvm install 18
     nvm use 18
 fi
@@ -34,7 +19,6 @@ fi
 # Verificar se o Git está instalado
 if ! command -v git &> /dev/null; then
     print_status "Instalando Git..."
-    # Instalação do Git no Ubuntu
     sudo apt update
     sudo apt install -y git
 fi
@@ -58,7 +42,7 @@ sudo apt install -y xvfb
 # Diretório onde o script está sendo executado
 base_dir=$(pwd)
 
-# Pasta onde o repositório será clonado (assumindo que é bot_what-main)
+# Pasta onde o repositório será clonado
 project_dir="$base_dir/bot_what-main/bot"
 
 # Navegar até o diretório do projeto
@@ -68,7 +52,7 @@ cd "$project_dir" || exit
 print_status "Instalando as dependências do projeto..."
 npm install
 
-# Configurar o arquivo .env (exemplo: definindo a porta)
+# Configurar o arquivo .env
 print_status "Configurando o arquivo .env..."
 echo "PORT=3000" > .env
 
@@ -91,38 +75,43 @@ const puppeteer = require('puppeteer');
 async function adicionarBotWhatsApp() {
     const browser = await puppeteer.launch({
         headless: false,
-        args: ['--no-sandbox', '--disable-setuid-sandbox', '--display=:99'] // Configurações para rodar sem sandbox e usando Xvfb
-    }); // Abre o navegador de forma visível para interação humana
+        args: ['--no-sandbox', '--disable-setuid-sandbox', '--display=:99']
+    });
     const page = await browser.newPage();
 
     try {
-        // Navega para o WhatsApp Web
+        console.log('Navegando para o WhatsApp Web...');
         await page.goto('https://web.whatsapp.com', { waitUntil: 'networkidle0' });
 
-        // Aguarda o usuário escanear o código QR manualmente
-        await page.waitForSelector('canvas[aria-label="Scan me!"]');
+        // Aumentar o tempo limite para 1 minuto
+        await page.waitForSelector('canvas[aria-label="Scan me!"]', { timeout: 60000 });
         console.log('Por favor, escaneie o código QR com seu dispositivo móvel.');
 
-        // Aguarda até que o código QR seja escaneado e a sessão seja iniciada
-        await page.waitForSelector('._2Uw-r'); // Isso é um seletor específico do WhatsApp Web após o login
+        // Aguardar até que a sessão seja iniciada
+        await page.waitForSelector('._2Uw-r', { timeout: 60000 });
         console.log('Código QR escaneado com sucesso! WhatsApp Web conectado.');
 
-        // Após escanear o QR code, adicionar o bot como novo dispositivo
-        // Exemplo: clicar no botão para adicionar novo dispositivo
-        await page.waitForSelector('div[title="Menu"]');
+        // Adicionar o bot como novo dispositivo (exemplo)
+        await page.waitForSelector('div[title="Menu"]', { timeout: 60000 });
         await page.click('div[title="Menu"]');
 
-        await page.waitForTimeout(2000); // Aguarda um curto período para o menu ser exibido
-        await page.waitForSelector('div[title="Dispositivos ligados"]');
+        await page.waitForTimeout(2000);
+        await page.waitForSelector('div[title="Dispositivos ligados"]', { timeout: 60000 });
         await page.click('div[title="Dispositivos ligados"]');
 
-        await page.waitForTimeout(2000); // Aguarda um curto período para a página de dispositivos ser carregada
-        await page.waitForSelector('span[title="Adicionar dispositivo"]');
+        await page.waitForTimeout(2000);
+        await page.waitForSelector('span[title="Adicionar dispositivo"]', { timeout: 60000 });
         await page.click('span[title="Adicionar dispositivo"]');
 
         console.log('Bot adicionado como novo dispositivo com sucesso!');
     } catch (error) {
         console.error('Erro ao adicionar o bot como novo dispositivo:', error);
+
+        if (error.message.includes('waiting for selector')) {
+            console.log('Tentando novamente...');
+            await page.reload();
+            return adicionarBotWhatsApp(); // Tentar novamente
+        }
     } finally {
         // Fecha o navegador
         await browser.close();
