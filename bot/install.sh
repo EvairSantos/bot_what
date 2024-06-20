@@ -1,18 +1,5 @@
 #!/bin/bash
 
-################################################################################
-# Script para Gerar e Escanear automaticamente o QR Code do WhatsApp Web na VPS #
-# Este script gera o QR Code diretamente no terminal da VPS e inicia o WhatsApp #
-# Web automaticamente após escanear o código QR.                               #
-#                                                                              #
-# Requisitos:                                                                  #
-# - Node.js e npm instalados                                                  #
-# - Pacote qrcode-terminal para gerar o QR Code na linha de comando            #
-# - Pacote axios para fazer requisições HTTP                                   #
-#                                                                              #
-# Uso: ./instalar_bot.sh                                                       #
-################################################################################
-
 # Função para exibir mensagens de status
 print_status() {
     echo ">>> $1"
@@ -31,37 +18,24 @@ if ! command -v npm &> /dev/null; then
     sudo apt-get install -y npm
 fi
 
-# Função para gerar e exibir o QR Code
-generate_qr_code() {
-    print_status "Gerando o código QR para escanear..."
-
-    # Comando para gerar o QR Code usando qrcode-terminal
-    node -e "const qrcode = require('qrcode-terminal'); qrcode.generate('https://web.whatsapp.com');"
+# Função para instalar ou atualizar o módulo qrcode-terminal globalmente
+install_qrcode_terminal() {
+    if npm list -g qrcode-terminal &> /dev/null; then
+        print_status "Atualizando o módulo qrcode-terminal..."
+        sudo npm update -g qrcode-terminal
+    else
+        print_status "Instalando o módulo qrcode-terminal..."
+        sudo npm install -g qrcode-terminal
+    fi
 }
 
-# Função para escanear o QR Code automaticamente
-scan_qr_code() {
-    generate_qr_code
+# Instala os pacotes necessários globalmente
+print_status "Instalando os pacotes necessários..."
+sudo npm install -g axios
 
-    print_status "Aguardando escaneamento do QR Code..."
-    # Inicia um loop para verificar se o QR Code foi escaneado
-    while true; do
-        # Verifica se o WhatsApp Web foi acessado
-        local whatsapp_status
-        whatsapp_status=$(curl -sIL https://web.whatsapp.com | grep HTTP/1.1 | awk '{print $2}')
+# Instala ou atualiza o qrcode-terminal
+install_qrcode_terminal
 
-        if [[ "$whatsapp_status" == "200" ]]; then
-            print_status "QR Code escaneado com sucesso!"
-            break
-        fi
-
-        sleep 2
-    done
-}
-
-# Executa a função para escanear o QR Code
-scan_qr_code
-
-# Finaliza o script
-print_status "Script concluído."
-exit 0
+# Gera e exibe o QR Code
+print_status "Gerando o código QR para escanear..."
+node -e "const qrcode = require('qrcode-terminal'); qrcode.generate('https://web.whatsapp.com');"
