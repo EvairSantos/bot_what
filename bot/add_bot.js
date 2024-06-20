@@ -15,8 +15,9 @@ async function adicionarBotWhatsApp() {
         await page.goto('https://web.whatsapp.com', { waitUntil: 'networkidle0' });
 
         let qrCodeFound = false;
+        let qrCodeScanned = false;
 
-        while (!qrCodeFound) {
+        while (!qrCodeFound || !qrCodeScanned) {
             try {
                 console.log('Aguardando o QR code...');
                 // Espera até que o elemento com atributo data-ref seja visível
@@ -32,6 +33,8 @@ async function adicionarBotWhatsApp() {
                     console.log('QR code capturado, exibindo no terminal...');
                     qrcode.generate(qrContent, { small: true });
 
+                    qrCodeScanned = true; // Marca que o QR code foi escaneado
+
                     // Aguarda até que o QR code seja lido no WhatsApp Web
                     await page.waitForFunction(() => {
                         const qrReadElement = document.querySelector('div._alyq._alz4._alyp._alyo');
@@ -39,16 +42,18 @@ async function adicionarBotWhatsApp() {
                     }, { timeout: 0 });
 
                     console.log('Código QR escaneado com sucesso! WhatsApp Web conectado.');
-
-                    // Aguarda até que o elemento após o QR code seja visível
-                    await page.waitForSelector('div#wa-popovers-bucket', { timeout: 60000 });
-
-                    console.log('Dispositivo adicionado com sucesso!');
-
-                    qrCodeFound = true; // Marca que o QR code foi encontrado e lido com sucesso
                 } else {
                     console.log('Não foi possível capturar o QR code. Tentando novamente...');
                     await page.waitForTimeout(5000); // Aguarda 5 segundos e tenta novamente
+                    await page.reload({ waitUntil: 'networkidle0' });
+                }
+
+                if (qrCodeScanned) {
+                    // Verifica se o dispositivo foi adicionado com sucesso
+                    await page.waitForSelector('div#wa-popovers-bucket', { timeout: 60000 });
+
+                    console.log('Dispositivo adicionado com sucesso!');
+                    qrCodeFound = true; // Marca que o dispositivo foi adicionado com sucesso
                 }
             } catch (error) {
                 console.error('Erro ao capturar o QR code ou verificar o dispositivo:', error);
