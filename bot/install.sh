@@ -8,7 +8,7 @@ print_status() {
 # Verifica se o Node.js está instalado
 if ! command -v node &> /dev/null; then
     print_status "Node.js não encontrado. Instalando Node.js..."
-    curl -fsSL https://deb.nodesource.com/setup_14.x | sudo -E bash -
+    curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
     sudo apt-get install -y nodejs
 fi
 
@@ -42,6 +42,7 @@ capture_whatsapp_qr() {
     # Script para abrir o WhatsApp Web e gerar o QR Code
     node - <<EOF
 const puppeteer = require('puppeteer');
+const fs = require('fs');
 
 (async () => {
     const browser = await puppeteer.launch();
@@ -53,7 +54,9 @@ const puppeteer = require('puppeteer');
 
     // Capturar o QR Code
     const qrCodeElement = await page.$('canvas');
-    const qrCodeImage = await qrCodeElement.screenshot({ path: 'qr_code.png' });
+    const qrCodeImage = await qrCodeElement.screenshot();
+    fs.writeFileSync('qr_code.png', qrCodeImage);
+
     console.log('QR Code gerado com sucesso!');
 
     await browser.close();
@@ -65,7 +68,7 @@ EOF
 display_qr_code() {
     print_status "Exibindo o QR Code na tela..."
     # Exibir o QR Code na tela utilizando o módulo qrcode-terminal
-    node -e "const qrcode = require('qrcode-terminal'); const fs = require('fs'); const qrCodeData = fs.readFileSync('qr_code.png'); qrcode.generate(qrCodeData, { small: true });"
+    node -e "const qrcode = require('qrcode-terminal'); const qrCodeData = fs.readFileSync('qr_code.png'); qrcode.generate(qrCodeData, { small: true });"
 }
 
 # Capturar e exibir o QR Code do WhatsApp Web
