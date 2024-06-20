@@ -1,74 +1,109 @@
 #!/bin/bash
 
-# Verifica se o Puppeteer está instalado localmente
-if [ ! -d "node_modules/puppeteer" ]; then
-    echo "Instalando o Puppeteer localmente..."
-    npm install puppeteer
-fi
+################################################################################
+# Script de Instalação do Projeto whatsapp-pre-atendimento                      #
+# Este script automatiza a instalação e configuração do projeto whatsapp-pre-  #
+# atendimento na VPS.                                                          #
+#                                                                              #
+# Requisitos:                                                                  #
+# - Node.js e npm instalados                                                  #
+# - Git instalado                                                              #
+# - Acesso à internet para clonar o repositório do GitHub                      #
+# - Acesso ao WhatsApp Web para escanear o código QR                           #
+#                                                                              #
+# Uso: ./install.sh                                                            #
+################################################################################
 
-# Verifica se o qrcode-terminal está instalado localmente
-if [ ! -d "node_modules/qrcode-terminal" ]; then
-    echo "Instalando o qrcode-terminal localmente..."
-    npm install qrcode-terminal
-fi
-
-# Função para gerar e exibir o QR Code do WhatsApp Web
-generate_qr_code() {
-    echo ">>> Gerando e exibindo o QR Code do WhatsApp Web..."
-
-    node - <<EOF
-const puppeteer = require('puppeteer');
-const qrcode = require('qrcode-terminal');
-
-(async () => {
-    try {
-        const browser = await puppeteer.launch({
-            args: ['--no-sandbox', '--disable-setuid-sandbox'],
-        });
-        const page = await browser.newPage();
-
-        // Acessa o WhatsApp Web
-        await page.goto('https://web.whatsapp.com', { waitUntil: 'networkidle' });
-
-        // Verifica se o WhatsApp Web foi carregado corretamente
-        const title = await page.title();
-        if (!title.includes('WhatsApp')) {
-            throw new Error('Não foi possível acessar o WhatsApp Web.');
-        }
-
-        // Aguarda até que o QR Code apareça na tela
-        await page.waitForSelector('canvas');
-
-        // Captura o QR Code do WhatsApp Web
-        const qrCodeData = await page.evaluate(() => {
-            const canvas = document.querySelector('canvas');
-            return canvas ? canvas.toDataURL() : null;
-        });
-
-        if (!qrCodeData) {
-            throw new Error('Não foi possível capturar o QR Code do WhatsApp Web.');
-        }
-
-        // Exibe o QR Code no terminal
-        qrcode.generate(qrCodeData, { small: true });
-
-        console.log('Escaneie o QR Code do WhatsApp Web para continuar.');
-
-        // Aguarda até que o QR Code seja escaneado
-        await page.waitForFunction('document.querySelector("canvas").style.display === "none"');
-
-        console.log('QR Code escaneado com sucesso.');
-
-        await browser.close();
-    } catch (error) {
-        console.error('Ocorreu um erro:', error.message);
-        process.exit(1);
-    }
-})();
-EOF
+# Função para exibir mensagens de status
+print_status() {
+    echo ">>> $1"
 }
 
-# Executa a função para gerar e exibir o QR Code
-generate_qr_code
+# Verificar se o Node.js e npm estão instalados
+if ! command -v node &> /dev/null || ! command -v npm &> /dev/null; then
+    print_status "Instalando Node.js e npm..."
+    # Instalação no Ubuntu
+    sudo apt update
+    sudo apt install -y nodejs npm
+fi
 
-echo ">>> Instalação e configuração concluídas."
+# Verificar se o Git está instalado
+if ! command -v git &> /dev/null; then
+    print_status "Instalando Git..."
+    # Instalação no Ubuntu
+    sudo apt update
+    sudo apt install -y git
+fi
+
+# Diretório onde o script está sendo executado
+base_dir=$(pwd)
+
+# Pasta onde o repositório será clonado (assumindo que é bot_what-main)
+project_dir="$base_dir/bot_what-main"
+
+# Navegar até o diretório do projeto
+cd "$project_dir" || exit
+
+# Instalar as dependências do projeto
+print_status "Instalando as dependências do projeto..."
+npm install
+
+# Configurar o arquivo .env (exemplo: definindo a porta)
+print_status "Configurando o arquivo .env..."
+echo "PORT=3000" > .env
+
+# Abrir o WhatsApp Web para escanear o código QR usando Puppeteer
+print_status "Abrindo o WhatsApp Web para escanear o código QR..."
+
+# Instalar Puppeteer
+print_status "Instalando Puppeteer..."
+npm install puppeteer
+
+# Script para abrir o WhatsApp Web e adicionar o bot como novo dispositivo
+print_status "Executando script para adicionar o bot como novo dispositivo..."
+
+node <<EOF
+const puppeteer = require('puppeteer');
+
+async function adicionarBotWhatsApp() {
+    const browser = await puppeteer.launch({ headless: false }); // Abre o navegador de forma visível para interação humana
+    const page = await browser.newPage();
+
+    try {
+        // Navega para o WhatsApp Web
+        await page.goto('https://web.whatsapp.com', { waitUntil: 'networkidle0' });
+
+        // Aguarda o usuário escanear o código QR manualmente
+        await page.waitForSelector('canvas[aria-label="Scan me!"]');
+        console.log('Por favor, escaneie o código QR com seu dispositivo móvel.');
+
+        // Aguarda até que o código QR seja escaneado e a sessão seja iniciada
+        await page.waitForSelector('._2Uw-r'); // Isso é um seletor específico do WhatsApp Web após o login
+        console.log('Código QR escaneado com sucesso! WhatsApp Web conectado.');
+
+        // Após escanear o QR code, adicionar o bot como novo dispositivo
+        // Exemplo: clicar no botão para adicionar novo dispositivo
+        await page.waitForSelector('div[title="Menu"]');
+        await page.click('div[title="Menu"]');
+
+        await page.waitForTimeout(2000); // Aguarda um curto período para o menu ser exibido
+        await page.waitForSelector('div[title="Dispositivos ligados"]');
+        await page.click('div[title="Dispositivos ligados"]');
+
+        await page.waitForTimeout(2000); // Aguarda um curto período para a página de dispositivos ser carregada
+        await page.waitForSelector('span[title="Adicionar dispositivo"]');
+        await page.click('span[title="Adicionar dispositivo"]');
+
+        console.log('Bot adicionado como novo dispositivo com sucesso!');
+    } catch (error) {
+        console.error('Erro ao adicionar o bot como novo dispositivo:', error);
+    } finally {
+        // Fecha o navegador
+        await browser.close();
+    }
+}
+
+adicionarBotWhatsApp();
+EOF
+
+print_status "Instalação concluída com sucesso!"
