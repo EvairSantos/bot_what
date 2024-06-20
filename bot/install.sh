@@ -76,9 +76,6 @@ print_status "Abrindo o WhatsApp Web para escanear o código QR..."
 print_status "Instalando Puppeteer..."
 npm install puppeteer@10
 
-# Executar o script JavaScript para adicionar o bot como novo dispositivo
-print_status "Executando script para adicionar o bot como novo dispositivo..."
-
 # Usar Xvfb para rodar Puppeteer em um ambiente sem GUI
 Xvfb :99 -screen 0 1024x768x16 &
 
