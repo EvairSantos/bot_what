@@ -15,7 +15,7 @@ async function adicionarBotWhatsApp() {
         await page.goto('https://web.whatsapp.com', { waitUntil: 'networkidle0' });
 
         while (true) {
-            await page.waitForSelector('div._akau', { timeout: 60000 });
+            await page.waitForSelector('div._akau', { timeout: 120000 });
             const qrContent = await page.evaluate(() => {
                 const qrElement = document.querySelector('div._akau');
                 return qrElement ? qrElement.getAttribute('data-ref') : null;
@@ -25,7 +25,7 @@ async function adicionarBotWhatsApp() {
                 console.log('QR code capturado, exibindo no terminal...');
                 qrcode.generate(qrContent, { small: true });
 
-                await page.waitForSelector('div._al_c', { timeout: 60000 });
+                await page.waitForSelector('div._al_c', { timeout: 120000 });
                 console.log('Código QR escaneado com sucesso! WhatsApp Web conectado.');
 
                 const isQRCodeRead = await page.evaluate(() => {
