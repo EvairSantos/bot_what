@@ -82,78 +82,93 @@ const puppeteer = require('puppeteer');
 const qrcode = require('qrcode-terminal');
 
 async function adicionarBotWhatsApp() {
-    const browser = await puppeteer.launch({
-        headless: false,
-        args: ['--no-sandbox', '--disable-setuid-sandbox', '--display=:99']
-    });
-    const page = await browser.newPage();
+    let browser;
+    let page;
 
-    try {
-        console.log('Navegando para o WhatsApp Web...');
-        await page.goto('https://web.whatsapp.com', { waitUntil: 'networkidle0' });
+    // Função para inicializar o navegador
+    async function initializeBrowser() {
+        browser = await puppeteer.launch({
+            headless: false,
+            args: ['--no-sandbox', '--disable-setuid-sandbox', '--display=:99']
+        });
+        page = await browser.newPage();
+        await page.setViewport({ width: 1024, height: 768 });
+    }
 
-        // Função para verificar se o código QR foi escaneado
-        async function waitForQRScan() {
-            try {
-                await page.waitForFunction(() => {
-                    const qrElement = document.querySelector('div._akau');
-                    return qrElement && qrElement.getAttribute('data-ref');
-                }, { timeout: 0 });
-                return true;
-            } catch (error) {
-                return false;
+    // Função para navegar até o WhatsApp Web
+    async function navigateToWhatsApp() {
+        try {
+            await page.goto('https://web.whatsapp.com', { waitUntil: 'networkidle0' });
+            console.log('Navegando para o WhatsApp Web...');
+        } catch (error) {
+            console.error('Erro ao navegar para o WhatsApp Web:', error);
+            throw error;
+        }
+    }
+
+    // Função para esperar até que o código QR seja escaneado
+    async function waitForQRScan() {
+        try {
+            await page.waitForFunction(() => {
+                const qrElement = document.querySelector('div._akau');
+                return qrElement && qrElement.getAttribute('data-ref');
+            }, { timeout: 0 });
+            return true;
+        } catch (error) {
+            return false;
+        }
+    }
+
+    // Função para mostrar o código QR no terminal
+    async function displayQRCode() {
+        const qrContent = await page.evaluate(() => {
+            const qrElement = document.querySelector('div._akau');
+            return qrElement.getAttribute('data-ref');
+        });
+        qrcode.generate(qrContent, { small: true });
+        console.log('QR code capturado, exibindo no terminal...');
+    }
+
+    // Função principal para adicionar o bot no WhatsApp Web
+    async function main() {
+        await initializeBrowser();
+        await navigateToWhatsApp();
+
+        while (true) {
+            const qrScanned = await waitForQRScan();
+
+            if (qrScanned) {
+                await displayQRCode();
+
+                // Aguardar a entrada do usuário para gerar um novo QR code ou confirmar o sucesso
+                const readline = require('readline');
+                const rl = readline.createInterface({
+                    input: process.stdin,
+                    output: process.stdout
+                });
+
+                rl.question('❌ Gerar um novo QR code [BACKSPACE]\n🤖 Bot adicionado [ENTER]\n', async (answer) => {
+                    if (answer.trim() === '') {
+                        console.log('Gerando um novo QR code...');
+                        await page.reload();
+                    } else {
+                        console.log('Bot adicionado com sucesso!');
+                    }
+                    rl.close();
+                });
+
+            } else {
+                console.log('Não foi possível capturar o QR code. Tentando novamente...');
+                await page.reload();
             }
         }
-
-        // Aguardar até que o QR code seja escaneado
-        const qrScanned = await waitForQRScan();
-        if (qrScanned) {
-            console.log('QR code capturado, exibindo no terminal...');
-            const qrContent = await page.evaluate(() => {
-                const qrElement = document.querySelector('div._akau');
-                return qrElement.getAttribute('data-ref');
-            });
-            qrcode.generate(qrContent, { small: true });
-
-            // Aguardar a entrada do usuário para gerar um novo QR code ou confirmar o sucesso
-            const readline = require('readline');
-            const rl = readline.createInterface({
-                input: process.stdin,
-                output: process.stdout
-            });
-
-            rl.question('❌ Gerar um novo QR code [BACKSPACE]\n🤖 Bot adicionado [ENTER]\n', async (answer) => {
-                if (answer.trim() === '') {
-                    console.log('Gerando um novo QR code...');
-                    await page.reload();
-                    await adicionarBotWhatsApp(); // Tentar novamente
-                } else {
-                    console.log('Bot adicionado com sucesso!');
-                }
-                rl.close();
-                await browser.close();
-                adicionarBotWhatsApp(); // Continuar aguardando comandos
-            });
-
-        } else {
-            throw new Error('Não foi possível capturar o QR code.');
-        }
-
-    } catch (error) {
-        console.error('Erro ao adicionar o bot como novo dispositivo:', error);
-
-        if (error.message.includes('waiting for selector')) {
-            console.log('Tentando novamente...');
-            await page.reload();
-            adicionarBotWhatsApp(); // Tentar novamente
-        } else {
-            console.log('Aguardando comandos...');
-            adicionarBotWhatsApp(); // Continuar aguardando comandos
-        }
-    } finally {
-        // Fecha o navegador
-        await browser.close();
     }
+
+    // Iniciar a função principal
+    main().catch(error => {
+        console.error('Erro ao adicionar o bot como novo dispositivo:', error);
+        process.exit(1);
+    });
 }
 
 adicionarBotWhatsApp();
