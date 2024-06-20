@@ -57,6 +57,10 @@ cd "$project_dir" || exit
 print_status "Instalando as dependências do projeto..."
 npm install
 
+# Instalar qrcode-terminal para exibir o QR code no terminal
+print_status "Instalando qrcode-terminal..."
+npm install -g qrcode-terminal
+
 # Configurar o arquivo .env
 print_status "Configurando o arquivo .env..."
 echo "PORT=3000" > .env
@@ -76,6 +80,7 @@ Xvfb :99 -screen 0 1024x768x16 &
 
 node <<EOF
 const puppeteer = require('puppeteer');
+const qrcode = require('qrcode-terminal');
 
 async function adicionarBotWhatsApp() {
     const browser = await puppeteer.launch({
@@ -88,27 +93,24 @@ async function adicionarBotWhatsApp() {
         console.log('Navegando para o WhatsApp Web...');
         await page.goto('https://web.whatsapp.com', { waitUntil: 'networkidle0' });
 
-        // Aumentar o tempo limite para 2 minutos
-        await page.waitForSelector('div._akau canvas[aria-label="Scan me!"]', { timeout: 120000 });
-        console.log('Por favor, escaneie o código QR com seu dispositivo móvel.');
+        // Aguardar a presença do QR code e capturar o conteúdo do data-ref
+        await page.waitForSelector('div._akau', { timeout: 60000 });
+        const qrContent = await page.evaluate(() => {
+            const qrElement = document.querySelector('div._akau');
+            return qrElement ? qrElement.getAttribute('data-ref') : null;
+        });
+
+        if (qrContent) {
+            console.log('QR code capturado, exibindo no terminal...');
+            qrcode.generate(qrContent, { small: true });
+        } else {
+            throw new Error('Não foi possível capturar o QR code.');
+        }
 
         // Aguardar até que a sessão seja iniciada
-        await page.waitForSelector('._2Uw-r', { timeout: 120000 });
+        await page.waitForSelector('._2Uw-r', { timeout: 60000 });
         console.log('Código QR escaneado com sucesso! WhatsApp Web conectado.');
 
-        // Adicionar o bot como novo dispositivo (exemplo)
-        await page.waitForSelector('div[title="Menu"]', { timeout: 120000 });
-        await page.click('div[title="Menu"]');
-
-        await page.waitForTimeout(2000);
-        await page.waitForSelector('div[title="Dispositivos ligados"]', { timeout: 120000 });
-        await page.click('div[title="Dispositivos ligados"]');
-
-        await page.waitForTimeout(2000);
-        await page.waitForSelector('span[title="Adicionar dispositivo"]', { timeout: 120000 });
-        await page.click('span[title="Adicionar dispositivo"]');
-
-        console.log('Bot adicionado como novo dispositivo com sucesso!');
     } catch (error) {
         console.error('Erro ao adicionar o bot como novo dispositivo:', error);
 
