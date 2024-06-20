@@ -76,10 +76,73 @@ print_status "Abrindo o WhatsApp Web para escanear o código QR..."
 print_status "Instalando Puppeteer..."
 npm install puppeteer@10
 
-# Executar o script Node.js separadamente
-print_status "Executando o script Node.js para adicionar o bot como novo dispositivo..."
+# Script para abrir o WhatsApp Web e adicionar o bot como novo dispositivo
+print_status "Executando script para adicionar o bot como novo dispositivo..."
 
-# Chamada para o script Node.js que lida com Puppeteer e readline-sync
-node "$project_dir/add_bot.js"
+# Usar Xvfb para rodar Puppeteer em um ambiente sem GUI
+Xvfb :99 -screen 0 1024x768x16 &
+
+# Comandos para exibir e aguardar entrada do usuário
+print_status "❌ Gerar um novo QR code [BACKSPACE]"
+print_status "🤖 Bot adicionado [ENTER]"
+
+node <<EOF
+const puppeteer = require('puppeteer');
+const qrcode = require('qrcode-terminal');
+
+async function adicionarBotWhatsApp() {
+    const browser = await puppeteer.launch({
+        headless: false,
+        args: ['--no-sandbox', '--disable-setuid-sandbox', '--display=:99']
+    });
+    const page = await browser.newPage();
+
+    try {
+        console.log('Navegando para o WhatsApp Web...');
+        await page.goto('https://web.whatsapp.com', { waitUntil: 'networkidle0' });
+
+        // Aguardar a presença do QR code e capturar o conteúdo do data-ref
+        await page.waitForSelector('div._akau', { timeout: 60000 });
+        const qrContent = await page.evaluate(() => {
+            const qrElement = document.querySelector('div._akau');
+            return qrElement ? qrElement.getAttribute('data-ref') : null;
+        });
+
+        if (qrContent) {
+            console.log('QR code capturado, exibindo no terminal...');
+            qrcode.generate(qrContent, { small: true });
+
+            // Aguardar até que a sessão seja iniciada
+            await page.waitForSelector('._2Uw-r', { timeout: 60000 });
+            console.log('Código QR escaneado com sucesso! WhatsApp Web conectado.');
+
+            // Aguardar indefinidamente para detectar quando o QR code foi lido
+            await page.waitForFunction(() => {
+                const qrElement = document.querySelector('div._akau');
+                return !qrElement;
+            });
+
+            console.log('O QR code foi lido.');
+
+        } else {
+            throw new Error('Não foi possível capturar o QR code.');
+        }
+
+    } catch (error) {
+        console.error('Erro ao adicionar o bot como novo dispositivo:', error);
+
+        if (error.message.includes('waiting for selector')) {
+            console.log('Tentando novamente...');
+            await page.reload();
+            await adicionarBotWhatsApp(); // Tentar novamente
+        }
+    } finally {
+        // Fecha o navegador
+        await browser.close();
+    }
+}
+
+adicionarBotWhatsApp();
+EOF
 
 print_status "Instalação concluída com sucesso!"
