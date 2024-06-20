@@ -32,7 +32,7 @@ async function adicionarBotWhatsApp() {
             qrcode.generate(qrContent, { small: true });
 
             // Aguarda até que o elemento após o QR code seja visível
-            await page.waitForSelector('div#_aiwn _aiwm app-wrapper-web os-win _ap4q', { timeout: 0 });
+            await page.waitForSelector('div#app-wrapper-web', { timeout: 0 });
 
             console.log('Dispositivo adicionado com sucesso!');
             qrCodeFound = true; // Marca que o QR code foi encontrado e o dispositivo foi adicionado
