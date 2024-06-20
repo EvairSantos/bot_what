@@ -4,9 +4,16 @@ const readlineSync = require('readline-sync');
 
 async function adicionarBotWhatsApp() {
     const browser = await puppeteer.launch({
-        headless: false, // Para ver a execução
-        args: ['--no-sandbox', '--disable-setuid-sandbox']
+        headless: false, // Alterado para false para ver a execução (pode ser true para headless)
+        args: [
+            '--no-sandbox',
+            '--disable-setuid-sandbox',
+            '--disable-dev-shm-usage',
+            `--display=${process.env.DISPLAY}`,
+        ],
+        executablePath: '/usr/bin/chromium-browser', // Caminho para o Chromium, ajuste conforme necessário
     });
+
     const page = await browser.newPage();
 
     try {
