@@ -78,10 +78,13 @@ print_status "Executando script para adicionar o bot como novo dispositivo..."
 # Usar Xvfb para rodar Puppeteer em um ambiente sem GUI
 Xvfb :99 -screen 0 1024x768x16 &
 
+# Comandos para exibir e aguardar entrada do usuário
+print_status "❌ Gerar um novo QR code [BACKSPACE]"
+print_status "🤖 Bot adicionado [ENTER]"
+
 node <<EOF
 const puppeteer = require('puppeteer');
 const qrcode = require('qrcode-terminal');
-const readline = require('readline');
 
 async function adicionarBotWhatsApp() {
     const browser = await puppeteer.launch({
@@ -110,12 +113,12 @@ async function adicionarBotWhatsApp() {
             console.log('Código QR escaneado com sucesso! WhatsApp Web conectado.');
 
             // Aguardar a entrada do usuário para gerar um novo QR code ou confirmar o sucesso
-            const rl = readline.createInterface({
+            const readline = require('readline').createInterface({
                 input: process.stdin,
                 output: process.stdout
             });
 
-            rl.question('❌ Gerar um novo QR code [BACKSPACE]\n🤖 Bot adicionado [ENTER]\n', async (answer) => {
+            readline.question('Digite "Y" para confirmar ou "N" para gerar um novo QR code: ', async (answer) => {
                 if (answer.trim().toLowerCase() === 'y') {
                     console.log('Bot adicionado com sucesso!');
                 } else if (answer.trim().toLowerCase() === 'n') {
@@ -127,7 +130,7 @@ async function adicionarBotWhatsApp() {
                     await page.reload();
                     await adicionarBotWhatsApp(); // Tentar novamente
                 }
-                rl.close();
+                readline.close();
                 await browser.close();
             });
         } else {
