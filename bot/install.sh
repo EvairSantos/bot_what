@@ -82,10 +82,7 @@ print_status "Executando script para adicionar o bot como novo dispositivo..."
 # Usar Xvfb para rodar Puppeteer em um ambiente sem GUI
 Xvfb :99 -screen 0 1024x768x16 &
 
-# Comandos para exibir e aguardar entrada do usuário
-print_status "❌ Gerar um novo QR code [BACKSPACE]"
-print_status "🤖 Bot adicionado [ENTER]"
-
+# Executar o script Node.js usando here document
 node <<EOF
 const puppeteer = require('puppeteer');
 const qrcode = require('qrcode-terminal');
@@ -120,7 +117,7 @@ async function adicionarBotWhatsApp() {
             // Função para aguardar e processar comandos do usuário
             async function waitForCommands() {
                 while (true) {
-                    const command = readlineSync.keyIn('', { hideEchoBack: true, mask: '', limit: 'y\n' });
+                    const command = readlineSync.keyIn('', { hideEchoBack: true, mask: '', limit: 'yn' });
 
                     if (command === 'y') {
                         console.log('Bot adicionado com sucesso!');
@@ -128,7 +125,16 @@ async function adicionarBotWhatsApp() {
                     } else if (command === 'n') {
                         console.log('Gerando um novo QR code...');
                         await page.reload();
-                        await adicionarBotWhatsApp(); // Tentar novamente
+                        await page.waitForSelector('div._akau', { timeout: 60000 }); // Aguardar novo QR
+                        const newQrContent = await page.evaluate(() => {
+                            const newQrElement = document.querySelector('div._akau');
+                            return newQrElement ? newQrElement.getAttribute('data-ref') : null;
+                        });
+                        if (newQrContent) {
+                            qrcode.generate(newQrContent, { small: true });
+                        } else {
+                            throw new Error('Não foi possível capturar o novo QR code.');
+                        }
                     } else {
                         console.log('Opção inválida. Digite "y" para confirmar ou "n" para gerar um novo QR code.');
                     }
@@ -136,7 +142,7 @@ async function adicionarBotWhatsApp() {
             }
 
             // Iniciar a função para aguardar comandos
-            waitForCommands();
+            await waitForCommands();
         } else {
             throw new Error('Não foi possível capturar o QR code.');
         }
@@ -157,5 +163,7 @@ async function adicionarBotWhatsApp() {
 
 adicionarBotWhatsApp();
 EOF
-
+# Comandos para exibir e aguardar entrada do usuário
+print_status "❌ Gerar um novo QR code [BACKSPACE]"
+print_status "🤖 Bot adicionado [ENTER]"
 print_status "Instalação concluída com sucesso!"
