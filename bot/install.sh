@@ -72,13 +72,12 @@ print_status "Abrindo o WhatsApp Web para escanear o código QR..."
 print_status "Instalando Puppeteer..."
 npm install puppeteer@10
 
-# Script para abrir o WhatsApp Web e adicionar o bot como novo dispositivo
-print_status "Executando script para adicionar o bot como novo dispositivo..."
+# Função para iniciar o processo de adicionar o bot no WhatsApp Web
+adicionarBotWhatsApp() {
+    # Usar Xvfb para rodar Puppeteer em um ambiente sem GUI
+    Xvfb :99 -screen 0 1024x768x16 &
 
-# Usar Xvfb para rodar Puppeteer em um ambiente sem GUI
-Xvfb :99 -screen 0 1024x768x16 &
-
-node <<EOF
+    node <<EOF
 const puppeteer = require('puppeteer');
 const qrcode = require('qrcode-terminal');
 
@@ -133,6 +132,7 @@ async function adicionarBotWhatsApp() {
                 }
                 rl.close();
                 await browser.close();
+                adicionarBotWhatsApp(); // Continuar aguardando comandos
             });
 
         } else {
@@ -145,7 +145,10 @@ async function adicionarBotWhatsApp() {
         if (error.message.includes('waiting for selector')) {
             console.log('Tentando novamente...');
             await page.reload();
-            return adicionarBotWhatsApp(); // Tentar novamente
+            adicionarBotWhatsApp(); // Tentar novamente
+        } else {
+            console.log('Aguardando comandos...');
+            adicionarBotWhatsApp(); // Continuar aguardando comandos
         }
     } finally {
         // Fecha o navegador
@@ -155,5 +158,9 @@ async function adicionarBotWhatsApp() {
 
 adicionarBotWhatsApp();
 EOF
+}
+
+# Iniciar o processo de adicionar o bot no WhatsApp Web
+adicionarBotWhatsApp &
 
 print_status "Instalação concluída com sucesso!"
