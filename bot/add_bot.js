@@ -19,31 +19,24 @@ async function adicionarBotWhatsApp() {
         while (!qrCodeFound) {
             try {
                 console.log('Aguardando o QR code...');
-                // Espera até que o elemento que contém o QR code seja visível
+                // Espera até que o elemento <canvas> com atributo data-ref seja visível
                 await page.waitForFunction(() => {
-                    const qrElement = document.querySelector('canvas');
-                    if (qrElement && qrElement.getAttribute('data-ref')) {
-                        return true;
-                    }
-                    return false;
+                    const qrElement = document.querySelector('canvas[data-ref]');
+                    return qrElement && qrElement.getAttribute('data-ref');
                 }, { timeout: 60000 });
 
                 const qrContent = await page.evaluate(() => {
-                    const qrElement = document.querySelector('canvas');
-                    if (qrElement) {
-                        return qrElement.getAttribute('data-ref');
-                    }
-                    return null;
+                    const qrElement = document.querySelector('canvas[data-ref]');
+                    return qrElement ? qrElement.getAttribute('data-ref') : null;
                 });
 
                 if (qrContent) {
-                    console.log('Conteúdo do QR code capturado:', qrContent);
                     console.log('QR code capturado, exibindo no terminal...');
                     qrcode.generate(qrContent, { small: true });
 
                     // Espera até que o QR code desapareça, indicando que foi lido
                     await page.waitForFunction(
-                        () => !document.querySelector('canvas'),
+                        () => !document.querySelector('canvas[data-ref]'),
                         { timeout: 60000 }
                     );
 
