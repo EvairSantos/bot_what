@@ -18,22 +18,63 @@ if ! command -v npm &> /dev/null; then
     sudo apt-get install -y npm
 fi
 
-# Instala o módulo qrcode-terminal localmente se ainda não estiver instalado
-install_qrcode_terminal() {
-    if [ ! -d "./node_modules/qrcode-terminal" ]; then
-        print_status "Instalando o módulo qrcode-terminal localmente..."
-        npm install qrcode-terminal
-    else
-        print_status "Módulo qrcode-terminal já está instalado."
-    fi
+# Função para instalar dependências do Puppeteer
+install_puppeteer_dependencies() {
+    print_status "Instalando dependências do Puppeteer..."
+    sudo apt-get install -y \
+        gconf-service \
+        libasound2 \
+        libatk1.0-0 \
+        libcups2 \
+        libdbus-1-3 \
+        libexpat1 \
+        libfontconfig1 \
+        libgcc1 \
+        libgconf-2-4 \
+        libgdk-pixbuf2.0-0 \
+        libglib2.0-0 \
+        libgtk-3-0 \
+        libnspr4 \
+        libpango-1.0-0 \
+        libpangocairo-1.0-0 \
+        libstdc++6 \
+        libx11-6 \
+        libx11-xcb1 \
+        libxcb1 \
+        libxcomposite1 \
+        libxcursor1 \
+        libxdamage1 \
+        libxext6 \
+        libxfixes3 \
+        libxi6 \
+        libxrandr2 \
+        libxrender1 \
+        libxss1 \
+        libxtst6 \
+        ca-certificates \
+        fonts-liberation \
+        libappindicator1 \
+        libnss3 \
+        lsb-release \
+        xdg-utils \
+        wget
 }
 
 # Instala os pacotes necessários localmente
 print_status "Instalando os pacotes necessários localmente..."
-npm install axios puppeteer
+npm install axios qrcode-terminal
+
+# Instala o Puppeteer
+print_status "Instalando Puppeteer..."
+npm install puppeteer
 
 # Instala ou verifica se o qrcode-terminal está instalado
-install_qrcode_terminal
+if [ ! -d "./node_modules/qrcode-terminal" ]; then
+    print_status "Instalando o módulo qrcode-terminal localmente..."
+    npm install qrcode-terminal
+else
+    print_status "Módulo qrcode-terminal já está instalado."
+fi
 
 # Função para abrir o WhatsApp Web e capturar o QR Code
 capture_whatsapp_qr() {
@@ -45,21 +86,25 @@ const puppeteer = require('puppeteer');
 const fs = require('fs');
 
 (async () => {
-    const browser = await puppeteer.launch();
-    const page = await browser.newPage();
-    await page.goto('https://web.whatsapp.com', { waitUntil: 'networkidle0' });
+    try {
+        const browser = await puppeteer.launch();
+        const page = await browser.newPage();
+        await page.goto('https://web.whatsapp.com', { waitUntil: 'networkidle0' });
 
-    // Esperar até que o QR Code esteja disponível
-    await page.waitForSelector('canvas', { timeout: 0 });
+        // Esperar até que o QR Code esteja disponível
+        await page.waitForSelector('canvas', { timeout: 0 });
 
-    // Capturar o QR Code
-    const qrCodeElement = await page.$('canvas');
-    const qrCodeImage = await qrCodeElement.screenshot();
-    fs.writeFileSync('qr_code.png', qrCodeImage);
+        // Capturar o QR Code
+        const qrCodeElement = await page.$('canvas');
+        const qrCodeImage = await qrCodeElement.screenshot();
+        fs.writeFileSync('qr_code.png', qrCodeImage);
 
-    console.log('QR Code gerado com sucesso!');
+        console.log('QR Code gerado com sucesso!');
 
-    await browser.close();
+        await browser.close();
+    } catch (error) {
+        console.error('Erro ao capturar o QR Code:', error);
+    }
 })();
 EOF
 }
