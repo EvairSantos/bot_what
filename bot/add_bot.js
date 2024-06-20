@@ -1,4 +1,3 @@
-
 const puppeteer = require('puppeteer');
 const qrcode = require('qrcode-terminal');
 
@@ -17,10 +16,10 @@ async function adicionarBotWhatsApp() {
 
         while (true) {
             try {
-                await page.waitForSelector('div[data-ref]', { timeout: 120000 }); // Aumentei o timeout
+                await page.waitForSelector('canvas[data-ref]', { timeout: 120000 });
 
                 const qrContent = await page.evaluate(() => {
-                    const qrElement = document.querySelector('div[data-ref]');
+                    const qrElement = document.querySelector('canvas[data-ref]');
                     return qrElement ? qrElement.getAttribute('data-ref') : null;
                 });
 
@@ -29,16 +28,20 @@ async function adicionarBotWhatsApp() {
                     qrcode.generate(qrContent, { small: true });
 
                     try {
-                        // Espera até que o WhatsApp Web esteja conectado
-                        await page.waitForSelector('div[data-testid="menu"]', { timeout: 120000 });
+                        // Verifica a presença do menu ou outro seletor indicativo de conexão
+                        await page.waitForFunction(
+                            () => document.querySelector('canvas[data-ref]') === null,
+                            { timeout: 120000 }
+                        );
+
                         console.log('Código QR escaneado com sucesso! WhatsApp Web conectado.');
 
-                        const isQRCodeRead = await page.evaluate(() => {
-                            const statusElement = document.querySelector('div._2Uo0Z');
-                            return statusElement ? statusElement.textContent.includes('Conectado') : false;
+                        // Confirmar conexão verificando outros elementos
+                        const isConnected = await page.evaluate(() => {
+                            return document.querySelector('div[data-testid="chatlist"]') !== null;
                         });
 
-                        if (isQRCodeRead) {
+                        if (isConnected) {
                             console.log('Bot adicionado como novo dispositivo!');
                             break;
                         } else {
