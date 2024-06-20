@@ -6,7 +6,7 @@
 # atendimento na VPS.                                                          #
 #                                                                              #
 # Requisitos:                                                                  #
-# - Node.js e npm instalados                                                  #
+# - Node.js e npm instalados (versão >= 18)                                     #
 # - Git instalado                                                              #
 # - Acesso à internet para clonar o repositório do GitHub                      #
 # - Acesso ao WhatsApp Web para escanear o código QR                           #
@@ -19,18 +19,20 @@ print_status() {
     echo ">>> $1"
 }
 
-# Verificar se o Node.js e npm estão instalados
-if ! command -v node &> /dev/null || ! command -v npm &> /dev/null; then
-    print_status "Instalando Node.js e npm..."
-    # Instalação no Ubuntu
-    sudo apt update
-    sudo apt install -y nodejs npm
+# Verificar se o Node.js e npm estão instalados e na versão correta (>= 18)
+if ! command -v node &> /dev/null || ! command -v npm &> /dev/null || [[ $(node -v | cut -d'.' -f1 | awk '{print $1}') -lt 18 ]]; then
+    print_status "Instalando Node.js e npm (versão 18.x)..."
+    # Instalação do Node.js 18.x com nvm (Node Version Manager)
+    curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | bash
+    source ~/.bashrc
+    nvm install 18
+    nvm use 18
 fi
 
 # Verificar se o Git está instalado
 if ! command -v git &> /dev/null; then
     print_status "Instalando Git..."
-    # Instalação no Ubuntu
+    # Instalação do Git no Ubuntu
     sudo apt update
     sudo apt install -y git
 fi
@@ -55,9 +57,9 @@ echo "PORT=3000" > .env
 # Abrir o WhatsApp Web para escanear o código QR usando Puppeteer
 print_status "Abrindo o WhatsApp Web para escanear o código QR..."
 
-# Instalar Puppeteer
+# Instalar Puppeteer na versão compatível
 print_status "Instalando Puppeteer..."
-npm install puppeteer
+npm install puppeteer@10
 
 # Script para abrir o WhatsApp Web e adicionar o bot como novo dispositivo
 print_status "Executando script para adicionar o bot como novo dispositivo..."
