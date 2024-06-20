@@ -72,54 +72,63 @@ print_status "Abrindo o WhatsApp Web para escanear o código QR..."
 print_status "Instalando Puppeteer..."
 npm install puppeteer@10
 
+# Script para abrir o WhatsApp Web e adicionar o bot como novo dispositivo
+print_status "Executando script para adicionar o bot como novo dispositivo..."
+
 # Usar Xvfb para rodar Puppeteer em um ambiente sem GUI
 Xvfb :99 -screen 0 1024x768x16 &
 
-# Criar um arquivo Node.js para adicionar o bot como novo dispositivo
-print_status "Criando script Node.js para adicionar o bot..."
-
-cat << 'EOF' > add_bot.js
+node <<EOF
 const puppeteer = require('puppeteer');
 const qrcode = require('qrcode-terminal');
 
 async function adicionarBotWhatsApp() {
     const browser = await puppeteer.launch({
-        headless: true,
-        args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-gpu']
+        headless: false,
+        args: ['--no-sandbox', '--disable-setuid-sandbox', '--display=:99']
     });
-
     const page = await browser.newPage();
 
     try {
         console.log('Navegando para o WhatsApp Web...');
         await page.goto('https://web.whatsapp.com', { waitUntil: 'networkidle0' });
 
-        // Aguardar a presença do QR code por até 5 segundos
-        const qrContent = await page.waitForSelector('div._akau[data-ref]', { timeout: 5000 })
-            .then(qrElement => qrElement.getAttribute('data-ref'))
-            .catch(() => null);
+        // Aguardar a presença do QR code e capturar o conteúdo do data-ref
+        await page.waitForSelector('div._akau', { timeout: 60000 });
+        const qrContent = await page.evaluate(() => {
+            const qrElement = document.querySelector('div._akau');
+            return qrElement ? qrElement.getAttribute('data-ref') : null;
+        });
 
         if (qrContent) {
             console.log('QR code capturado, exibindo no terminal...');
             qrcode.generate(qrContent, { small: true });
 
-            // Loop para monitorar a presença do QR code
-            let qrStillVisible = true;
-            while (qrStillVisible) {
-                // Esperar 1 segundo antes de verificar novamente
-                await new Promise(resolve => setTimeout(resolve, 1000));
+            // Aguardar até que a sessão seja iniciada
+            await page.waitForSelector('._2Uw-r', { timeout: 60000 });
+            console.log('Código QR escaneado com sucesso! WhatsApp Web conectado.');
 
-                qrStillVisible = await page.evaluate(() => {
-                    return !!document.querySelector('div._akau');
-                });
-            }
-            console.log('QR code escaneado! WhatsApp Web conectado.');
+            // Aguardar a entrada do usuário para gerar um novo QR code ou confirmar o sucesso
+            const readline = require('readline');
+            const rl = readline.createInterface({
+                input: process.stdin,
+                output: process.stdout
+            });
+
+            rl.question('❌ Gerar um novo QR code [BACKSPACE]\n🤖 Bot adicionado [ENTER]\n', async (answer) => {
+                if (answer.trim() === '') {
+                    console.log('Gerando um novo QR code...');
+                    await page.reload();
+                    await adicionarBotWhatsApp(); // Tentar novamente
+                } else {
+                    console.log('Bot adicionado com sucesso!');
+                }
+                rl.close();
+                await browser.close();
+            });
         } else {
             throw new Error('Não foi possível capturar o QR code.');
         }
-
-        // Verificar se a sessão foi iniciada com sucesso
-        await page.waitForSelector('._2Uw-r', { timeout: 60000 });
 
     } catch (error) {
         console.error('Erro ao adicionar o bot como novo dispositivo:', error);
@@ -137,9 +146,5 @@ async function adicionarBotWhatsApp() {
 
 adicionarBotWhatsApp();
 EOF
-
-# Executar o script Node.js para adicionar o bot
-print_status "Executando script Node.js para adicionar o bot..."
-node add_bot.js
 
 print_status "Instalação concluída com sucesso!"
