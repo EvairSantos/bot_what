@@ -82,7 +82,10 @@ node <<EOF
 const puppeteer = require('puppeteer');
 
 async function adicionarBotWhatsApp() {
-    const browser = await puppeteer.launch({ headless: false }); // Abre o navegador de forma visível para interação humana
+    const browser = await puppeteer.launch({
+        headless: false,
+        args: ['--no-sandbox', '--disable-setuid-sandbox'] // Executa sem o sandbox para evitar erros de execução como root
+    }); // Abre o navegador de forma visível para interação humana
     const page = await browser.newPage();
 
     try {
