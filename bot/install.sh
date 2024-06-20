@@ -39,6 +39,11 @@ sudo apt install -y \
 print_status "Instalando Xvfb..."
 sudo apt install -y xvfb
 
+# Encerrar qualquer instância existente do Xvfb e remover o arquivo de bloqueio
+print_status "Finalizando instâncias anteriores do Xvfb..."
+pkill Xvfb || true
+rm -f /tmp/.X99-lock
+
 # Diretório onde o script está sendo executado
 base_dir=$(pwd)
 
@@ -83,24 +88,24 @@ async function adicionarBotWhatsApp() {
         console.log('Navegando para o WhatsApp Web...');
         await page.goto('https://web.whatsapp.com', { waitUntil: 'networkidle0' });
 
-        // Aumentar o tempo limite para 1 minuto
-        await page.waitForSelector('canvas[aria-label="Scan me!"]', { timeout: 60000 });
+        // Aumentar o tempo limite para 2 minutos
+        await page.waitForSelector('canvas[aria-label="Scan me!"]', { timeout: 120000 });
         console.log('Por favor, escaneie o código QR com seu dispositivo móvel.');
 
         // Aguardar até que a sessão seja iniciada
-        await page.waitForSelector('._2Uw-r', { timeout: 60000 });
+        await page.waitForSelector('._2Uw-r', { timeout: 120000 });
         console.log('Código QR escaneado com sucesso! WhatsApp Web conectado.');
 
         // Adicionar o bot como novo dispositivo (exemplo)
-        await page.waitForSelector('div[title="Menu"]', { timeout: 60000 });
+        await page.waitForSelector('div[title="Menu"]', { timeout: 120000 });
         await page.click('div[title="Menu"]');
 
         await page.waitForTimeout(2000);
-        await page.waitForSelector('div[title="Dispositivos ligados"]', { timeout: 60000 });
+        await page.waitForSelector('div[title="Dispositivos ligados"]', { timeout: 120000 });
         await page.click('div[title="Dispositivos ligados"]');
 
         await page.waitForTimeout(2000);
-        await page.waitForSelector('span[title="Adicionar dispositivo"]', { timeout: 60000 });
+        await page.waitForSelector('span[title="Adicionar dispositivo"]', { timeout: 120000 });
         await page.click('span[title="Adicionar dispositivo"]');
 
         console.log('Bot adicionado como novo dispositivo com sucesso!');
