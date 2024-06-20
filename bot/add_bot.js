@@ -25,7 +25,7 @@ async function adicionarBotWhatsApp() {
                 console.log('WhatsApp Web conectado após o login.');
 
                 const isBotAdded = await page.evaluate(() => {
-                    return document.querySelector('div._2Uw-r') !== null; // Verifica se o bot foi adicionado
+                    return document.querySelector('div._al_c') !== null; // Verifica se o bot foi adicionado
                 });
 
                 if (isBotAdded) {
