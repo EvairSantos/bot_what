@@ -51,6 +51,10 @@ sudo apt install -y \
     libasound2 \
     xdg-utils
 
+# Instalar Xvfb para emular um servidor X
+print_status "Instalando Xvfb..."
+sudo apt install -y xvfb
+
 # Diretório onde o script está sendo executado
 base_dir=$(pwd)
 
@@ -78,13 +82,16 @@ npm install puppeteer@10
 # Script para abrir o WhatsApp Web e adicionar o bot como novo dispositivo
 print_status "Executando script para adicionar o bot como novo dispositivo..."
 
+# Usar Xvfb para rodar Puppeteer em um ambiente sem GUI
+Xvfb :99 -screen 0 1024x768x16 &
+
 node <<EOF
 const puppeteer = require('puppeteer');
 
 async function adicionarBotWhatsApp() {
     const browser = await puppeteer.launch({
         headless: false,
-        args: ['--no-sandbox', '--disable-setuid-sandbox'] // Executa sem o sandbox para evitar erros de execução como root
+        args: ['--no-sandbox', '--disable-setuid-sandbox', '--display=:99'] // Configurações para rodar sem sandbox e usando Xvfb
     }); // Abre o navegador de forma visível para interação humana
     const page = await browser.newPage();
 
