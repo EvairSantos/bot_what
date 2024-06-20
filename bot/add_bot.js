@@ -29,7 +29,7 @@ async function adicionarBotWhatsApp() {
             qrcode.generate(qrContent, { small: true });
 
             // Aguarda até que o elemento após o QR code seja visível
-            await page.waitForSelector('div#app-wrapper-web', { timeout: 60000 });
+            await page.waitForSelector('div#_aigv _aigw _aigx', { timeout: 60000 });
 
             console.log('Dispositivo adicionado com sucesso!');
         } else {
