@@ -117,20 +117,18 @@ async function adicionarBotWhatsApp() {
             await page.waitForSelector('._2Uw-r', { timeout: 60000 });
             console.log('Código QR escaneado com sucesso! WhatsApp Web conectado.');
 
-            // Aguardar a entrada do usuário para gerar um novo QR code ou confirmar o sucesso
-            const answer = readlineSync.question('Digite "Y" para confirmar ou "N" para gerar um novo QR code: ').toLowerCase();
-
-            if (answer === 'y') {
-                console.log('Bot adicionado com sucesso!');
-            } else if (answer === 'n') {
-                console.log('Gerando um novo QR code...');
-                await page.reload();
-                await adicionarBotWhatsApp(); // Tentar novamente
-            } else {
-                console.log('Opção inválida. Gerando um novo QR code...');
-                await page.reload();
-                await adicionarBotWhatsApp(); // Tentar novamente
-            }
+            // Exibir opções de confirmação
+            console.log('Pressione "Y" para confirmar ou "N" para gerar um novo QR code:');
+            readlineSync.promptCLLoop({
+                Y: function() {
+                    console.log('Bot adicionado com sucesso!');
+                    this.exit();
+                },
+                N: function() {
+                    console.log('Gerando um novo QR code...');
+                    adicionarBotWhatsApp(); // Tentar novamente
+                }
+            });
         } else {
             throw new Error('Não foi possível capturar o QR code.');
         }
@@ -141,7 +139,7 @@ async function adicionarBotWhatsApp() {
         if (error.message.includes('waiting for selector')) {
             console.log('Tentando novamente...');
             await page.reload();
-            await adicionarBotWhatsApp(); // Tentar novamente
+            adicionarBotWhatsApp(); // Tentar novamente
         }
     } finally {
         // Fecha o navegador
