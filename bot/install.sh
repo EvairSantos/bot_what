@@ -93,20 +93,28 @@ async function adicionarBotWhatsApp() {
         console.log('Navegando para o WhatsApp Web...');
         await page.goto('https://web.whatsapp.com', { waitUntil: 'networkidle0' });
 
-        // Aguardar a presença do QR code e capturar o conteúdo do data-ref
-        await page.waitForSelector('div._akau', { timeout: 60000 });
-        const qrContent = await page.evaluate(() => {
-            const qrElement = document.querySelector('div._akau');
-            return qrElement ? qrElement.getAttribute('data-ref') : null;
-        });
+        // Função para verificar se o código QR foi escaneado
+        async function waitForQRScan() {
+            try {
+                await page.waitForFunction(() => {
+                    const qrElement = document.querySelector('div._akau');
+                    return qrElement && qrElement.getAttribute('data-ref');
+                }, { timeout: 0 });
+                return true;
+            } catch (error) {
+                return false;
+            }
+        }
 
-        if (qrContent) {
+        // Aguardar até que o QR code seja escaneado
+        const qrScanned = await waitForQRScan();
+        if (qrScanned) {
             console.log('QR code capturado, exibindo no terminal...');
+            const qrContent = await page.evaluate(() => {
+                const qrElement = document.querySelector('div._akau');
+                return qrElement.getAttribute('data-ref');
+            });
             qrcode.generate(qrContent, { small: true });
-
-            // Aguardar até que a sessão seja iniciada
-            await page.waitForSelector('._2Uw-r', { timeout: 60000 });
-            console.log('Código QR escaneado com sucesso! WhatsApp Web conectado.');
 
             // Aguardar a entrada do usuário para gerar um novo QR code ou confirmar o sucesso
             const readline = require('readline');
@@ -126,6 +134,7 @@ async function adicionarBotWhatsApp() {
                 rl.close();
                 await browser.close();
             });
+
         } else {
             throw new Error('Não foi possível capturar o QR code.');
         }
