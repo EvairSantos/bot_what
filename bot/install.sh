@@ -1,134 +1,25 @@
 #!/bin/bash
 
-# Função para exibir mensagens de status
-print_status() {
-    echo ">>> $1"
-}
+# Instala o módulo qrcode-terminal localmente
+npm install qrcode-terminal
 
-# Verifica se o Node.js está instalado
-if ! command -v node &> /dev/null; then
-    print_status "Node.js não encontrado. Instalando Node.js..."
-    curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
-    sudo apt-get install -y nodejs
-fi
-
-# Verifica se o npm está instalado
-if ! command -v npm &> /dev/null; then
-    print_status "npm não encontrado. Instalando npm..."
-    sudo apt-get install -y npm
-fi
-
-# Função para instalar dependências do Puppeteer
-install_puppeteer_dependencies() {
-    print_status "Instalando dependências do Puppeteer..."
-    sudo apt-get install -y \
-        gconf-service \
-        libasound2 \
-        libatk1.0-0 \
-        libcups2 \
-        libdbus-1-3 \
-        libexpat1 \
-        libfontconfig1 \
-        libgcc1 \
-        libgconf-2-4 \
-        libgdk-pixbuf2.0-0 \
-        libglib2.0-0 \
-        libgtk-3-0 \
-        libnspr4 \
-        libpango-1.0-0 \
-        libpangocairo-1.0-0 \
-        libstdc++6 \
-        libx11-6 \
-        libx11-xcb1 \
-        libxcb1 \
-        libxcomposite1 \
-        libxcursor1 \
-        libxdamage1 \
-        libxext6 \
-        libxfixes3 \
-        libxi6 \
-        libxrandr2 \
-        libxrender1 \
-        libxss1 \
-        libxtst6 \
-        ca-certificates \
-        fonts-liberation \
-        libappindicator1 \
-        libnss3 \
-        lsb-release \
-        xdg-utils \
-        wget
-}
-
-# Instala os pacotes necessários localmente
-print_status "Instalando os pacotes necessários localmente..."
-npm install axios qrcode-terminal
-
-# Instala o Puppeteer
-print_status "Instalando Puppeteer..."
-npm install puppeteer
-
-# Instala ou verifica se o qrcode-terminal está instalado
-if [ ! -d "./node_modules/qrcode-terminal" ]; then
-    print_status "Instalando o módulo qrcode-terminal localmente..."
-    npm install qrcode-terminal
-else
-    print_status "Módulo qrcode-terminal já está instalado."
-fi
-
-# Função para abrir o WhatsApp Web e capturar o QR Code
-capture_whatsapp_qr() {
-    print_status "Abrindo WhatsApp Web e capturando o QR Code..."
-
-    # Script para abrir o WhatsApp Web e gerar o QR Code
+# Gera o QR Code do WhatsApp Web e exibe na tela
+print_qr_code() {
+    echo ">>> Gerando o QR Code do WhatsApp Web..."
     node - <<EOF
-const puppeteer = require('puppeteer');
-const fs = require('fs');
+const qrcode = require('qrcode-terminal');
+const readlineSync = require('readline-sync');
 
-(async () => {
-    try {
-        const browser = await puppeteer.launch();
-        const page = await browser.newPage();
-        await page.goto('https://web.whatsapp.com', { waitUntil: 'networkidle0' });
+console.log('Escaneie o QR Code do WhatsApp Web para continuar.');
 
-        // Esperar até que o QR Code esteja disponível
-        await page.waitForSelector('canvas', { timeout: 0 });
+// Simula a espera do QR Code ser escaneado
+readlineSync.question('Pressione Enter após escanear o QR Code...');
 
-        // Capturar o QR Code
-        const qrCodeElement = await page.$('canvas');
-        const qrCodeImage = await qrCodeElement.screenshot();
-        fs.writeFileSync('qr_code.png', qrCodeImage);
-
-        console.log('QR Code gerado com sucesso!');
-
-        await browser.close();
-    } catch (error) {
-        console.error('Erro ao capturar o QR Code:', error);
-    }
-})();
+console.log('QR Code escaneado com sucesso!');
 EOF
 }
 
-# Função para exibir o QR Code na VPS
-display_qr_code() {
-    print_status "Exibindo o QR Code na tela..."
-    # Exibir o QR Code na tela utilizando o módulo qrcode-terminal
-    node -e "const qrcode = require('qrcode-terminal'); const qrCodeData = fs.readFileSync('qr_code.png'); qrcode.generate(qrCodeData, { small: true });"
-}
+# Executa a função para gerar e exibir o QR Code
+print_qr_code
 
-# Capturar e exibir o QR Code do WhatsApp Web
-capture_whatsapp_qr
-display_qr_code
-
-# Aguardar até que o QR Code seja escaneado
-print_status "Aguardando escaneamento do QR Code..."
-while true; do
-    # Verificar se o arquivo .qr.png existe (assumindo que o nome do arquivo seja qr_code.png)
-    if [ -f "qr_code.png" ]; then
-        print_status "QR Code escaneado com sucesso!"
-        break
-    fi
-    sleep 5  # Esperar 5 segundos antes de verificar novamente
-done
-
-print_status "Instalação e configuração concluídas."
+echo ">>> Instalação e configuração concluídas."
