@@ -4,14 +4,15 @@ const readlineSync = require('readline-sync');
 
 async function adicionarBotWhatsApp() {
     const browser = await puppeteer.launch({
-        headless: false, // Alterado para false para ver a execução (pode ser true para headless)
+        headless: false,
         args: [
             '--no-sandbox',
             '--disable-setuid-sandbox',
             '--disable-dev-shm-usage',
-            `--display=${process.env.DISPLAY}`,
+            '--disable-gpu',
+            `--display=${process.env.DISPLAY || ':99'}`, // Defina o DISPLAY para o Xvfb se necessário
         ],
-        executablePath: '/usr/bin/chromium-browser', // Caminho para o Chromium, ajuste conforme necessário
+        executablePath: '/usr/bin/chromium-browser', // Caminho para o executável do Chromium
     });
 
     const page = await browser.newPage();
@@ -31,10 +32,14 @@ async function adicionarBotWhatsApp() {
             console.log('QR code capturado, exibindo no terminal...');
             qrcode.generate(qrContent, { small: true });
 
+            // Aguardar até que a sessão seja iniciada
+            await page.waitForSelector('._2Uw-r', { timeout: 60000 });
+            console.log('Código QR escaneado com sucesso! WhatsApp Web conectado.');
+
             // Função para aguardar e processar comandos do usuário
             async function waitForCommands() {
                 while (true) {
-                    const command = readlineSync.keyIn('', { hideEchoBack: true, mask: '', limit: 'yn' });
+                    const command = readlineSync.keyIn('', { hideEchoBack: true, mask: '', limit: 'y\n' });
 
                     if (command === 'y') {
                         console.log('Bot adicionado com sucesso!');
@@ -42,16 +47,7 @@ async function adicionarBotWhatsApp() {
                     } else if (command === 'n') {
                         console.log('Gerando um novo QR code...');
                         await page.reload();
-                        await page.waitForSelector('div._akau', { timeout: 60000 }); // Aguardar novo QR
-                        const newQrContent = await page.evaluate(() => {
-                            const newQrElement = document.querySelector('div._akau');
-                            return newQrElement ? newQrElement.getAttribute('data-ref') : null;
-                        });
-                        if (newQrContent) {
-                            qrcode.generate(newQrContent, { small: true });
-                        } else {
-                            throw new Error('Não foi possível capturar o novo QR code.');
-                        }
+                        await adicionarBotWhatsApp(); // Tentar novamente
                     } else {
                         console.log('Opção inválida. Digite "y" para confirmar ou "n" para gerar um novo QR code.');
                     }
@@ -59,7 +55,7 @@ async function adicionarBotWhatsApp() {
             }
 
             // Iniciar a função para aguardar comandos
-            await waitForCommands();
+            waitForCommands();
         } else {
             throw new Error('Não foi possível capturar o QR code.');
         }
