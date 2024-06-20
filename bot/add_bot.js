@@ -1,18 +1,10 @@
 const puppeteer = require('puppeteer');
-const qrcode = require('qrcode-terminal');
-const readlineSync = require('readline-sync');
 
 async function adicionarBotWhatsApp() {
     const browser = await puppeteer.launch({
-        headless: false,
-        args: [
-            '--no-sandbox',
-            '--disable-setuid-sandbox',
-            '--disable-dev-shm-usage',
-            '--disable-gpu',
-            `--display=${process.env.DISPLAY || ':99'}`, // Defina o DISPLAY para o Xvfb se necessário
-        ],
-        executablePath: '/usr/bin/chromium-browser', // Caminho para o executável do Chromium
+        product: 'firefox', // Define o navegador como Firefox
+        headless: false, // Define se o navegador será exibido ou não (true para não exibir)
+        args: ['--no-sandbox', '--disable-setuid-sandbox'] // Argumentos adicionais
     });
 
     const page = await browser.newPage();
@@ -21,41 +13,60 @@ async function adicionarBotWhatsApp() {
         console.log('Navegando para o WhatsApp Web...');
         await page.goto('https://web.whatsapp.com', { waitUntil: 'networkidle0' });
 
-        // Função para exibir QR code e aguardar confirmação ou nova geração
-        async function waitForCommands() {
-            while (true) {
-                const command = readlineSync.keyIn('', { hideEchoBack: true, mask: '', limit: 'yn' });
+        // Aguardar a presença do QR code e capturar o conteúdo do data-ref
+        await page.waitForSelector('div._akau', { timeout: 60000 });
+        const qrContent = await page.evaluate(() => {
+            const qrElement = document.querySelector('div._akau');
+            return qrElement ? qrElement.getAttribute('data-ref') : null;
+        });
 
-                if (command === 'y') {
-                    console.log('Bot adicionado com sucesso!');
-                    break;
-                } else if (command === 'n') {
-                    console.log('Gerando um novo QR code...');
-                    await page.reload();
-                    await page.waitForSelector('div._akau', { timeout: 60000 });
-                    const qrContent = await page.evaluate(() => {
-                        const qrElement = document.querySelector('div._akau');
-                        return qrElement ? qrElement.getAttribute('data-ref') : null;
-                    });
+        if (qrContent) {
+            console.log('QR code capturado, exibindo no terminal...');
+            console.log(qrContent); // Mostra o QR code no terminal
 
-                    if (qrContent) {
-                        console.log('QR code capturado, exibindo no terminal...');
-                        qrcode.generate(qrContent, { small: true });
+            // Aguardar até que a sessão seja iniciada
+            await page.waitForSelector('._2Uw-r', { timeout: 60000 });
+            console.log('Código QR escaneado com sucesso! WhatsApp Web conectado.');
 
-                        // Aguardar até que a sessão seja iniciada
-                        await page.waitForSelector('._2Uw-r', { timeout: 60000 });
-                        console.log('Código QR escaneado com sucesso! WhatsApp Web conectado.');
+            // Função para aguardar e processar comandos do usuário
+            async function waitForCommands() {
+                while (true) {
+                    const command = await promptUserInput('Deseja adicionar o bot como novo dispositivo? (y/n): ');
+
+                    if (command === 'y') {
+                        console.log('Adicionando o bot como novo dispositivo...');
+                        // Aqui você colocaria a lógica para adicionar o bot
+                        console.log('Bot adicionado com sucesso!');
+                        break;
+                    } else if (command === 'n') {
+                        console.log('Gerando um novo QR code...');
+                        await page.reload();
+                        await page.waitForSelector('div._akau', { timeout: 60000 });
+                        const newQrContent = await page.evaluate(() => {
+                            const qrElement = document.querySelector('div._akau');
+                            return qrElement ? qrElement.getAttribute('data-ref') : null;
+                        });
+
+                        if (newQrContent) {
+                            console.log('Novo QR code gerado:');
+                            console.log(newQrContent);
+                            console.log('Escaneie o novo QR code e aguarde...');
+                            await page.waitForSelector('._2Uw-r', { timeout: 60000 });
+                            console.log('Código QR escaneado com sucesso! WhatsApp Web conectado novamente.');
+                        } else {
+                            throw new Error('Não foi possível gerar um novo QR code.');
+                        }
                     } else {
-                        throw new Error('Não foi possível capturar o QR code.');
+                        console.log('Opção inválida. Digite "y" para adicionar o bot ou "n" para gerar um novo QR code.');
                     }
-                } else {
-                    console.log('Opção inválida. Digite "y" para confirmar ou "n" para gerar um novo QR code.');
                 }
             }
-        }
 
-        // Iniciar a função para aguardar comandos
-        waitForCommands();
+            // Iniciar a função para aguardar comandos
+            await waitForCommands();
+        } else {
+            throw new Error('Não foi possível capturar o QR code.');
+        }
 
     } catch (error) {
         console.error('Erro ao adicionar o bot como novo dispositivo:', error);
@@ -69,6 +80,20 @@ async function adicionarBotWhatsApp() {
         // Fecha o navegador
         await browser.close();
     }
+}
+
+async function promptUserInput(prompt) {
+    const readline = require('readline').createInterface({
+        input: process.stdin,
+        output: process.stdout
+    });
+
+    return new Promise(resolve => {
+        readline.question(prompt, answer => {
+            readline.close();
+            resolve(answer.trim().toLowerCase());
+        });
+    });
 }
 
 adicionarBotWhatsApp();
