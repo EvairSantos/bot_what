@@ -27,8 +27,17 @@ async function adicionarBotWhatsApp() {
 
                 await page.waitForSelector('div._al_c', { timeout: 60000 });
                 console.log('Código QR escaneado com sucesso! WhatsApp Web conectado.');
-                console.log('Bot adicionado como novo dispositivo!');
-                break;
+
+                const isQRCodeRead = await page.evaluate(() => {
+                    const statusElement = document.querySelector('div._al_c');
+                    return statusElement ? statusElement.textContent.includes('Conectado') : false;
+                });
+
+                if (isQRCodeRead) {
+                    console.log('Bot adicionado como novo dispositivo!');
+                    // Aqui você pode adicionar qualquer ação adicional após a conexão bem-sucedida
+                    break; // Encerra o loop porque o bot está ativo
+                }
             } else {
                 throw new Error('Não foi possível capturar o QR code.');
             }
