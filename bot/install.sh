@@ -10,34 +10,28 @@
 # - Acesso à internet para clonar o repositório do GitHub                      #
 # - Acesso ao WhatsApp Web para escanear o código QR                           #
 #                                                                              #
-# Uso: ./install.sh <link-do-repositorio>                                       #
+# Uso: ./install.sh                                                            #
 ################################################################################
-
-# Verificar se foi passado o link do repositório como argumento
-if [ $# -eq 0 ]; then
-    echo "Erro: Link do repositório não especificado."
-    echo "Uso: ./install.sh <link-do-repositorio>"
-    exit 1
-fi
-
-# Link do repositório do GitHub fornecido como argumento
-repo_link=$1
 
 # Função para exibir mensagens de status
 print_status() {
     echo ">>> $1"
 }
 
-# Clonar o repositório do GitHub
-print_status "Clonando o repositório..."
-git clone $repo_link whatsapp-pre-atendimento
-cd whatsapp-pre-atendimento/bot
+# Diretório onde o script está sendo executado
+base_dir=$(pwd)
+
+# Pasta onde o repositório foi clonado (assumindo que é bot_what-main)
+project_dir="$base_dir/bot_what-main"
+
+# Navegar até o diretório do projeto
+cd "$project_dir" || exit
 
 # Instalar as dependências do projeto
 print_status "Instalando as dependências..."
 npm install
 
-# Configurar o arquivo .env
+# Configurar o arquivo .env (exemplo: definindo a porta)
 print_status "Configurando o arquivo .env..."
 echo "PORT=3000" > .env
 
