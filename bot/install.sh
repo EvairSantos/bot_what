@@ -1,15 +1,15 @@
 #!/bin/bash
 
-# Instala os módulos necessários localmente
-npm install qrcode-terminal puppeteer
+# Instalação dos módulos necessários localmente
+npm install puppeteer qrcode-terminal
 
 # Função para gerar e exibir o QR Code do WhatsApp Web
-print_qr_code() {
+generate_qr_code() {
     echo ">>> Gerando e exibindo o QR Code do WhatsApp Web..."
 
     node - <<EOF
-const qrcode = require('qrcode-terminal');
 const puppeteer = require('puppeteer');
+const qrcode = require('qrcode-terminal');
 
 (async () => {
     const browser = await puppeteer.launch();
@@ -49,6 +49,6 @@ EOF
 }
 
 # Executa a função para gerar e exibir o QR Code
-print_qr_code
+generate_qr_code
 
 echo ">>> Instalação e configuração concluídas."
