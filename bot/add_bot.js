@@ -1,13 +1,13 @@
-async function adicionarBotWhatsApp() {
-    const puppeteer = require('puppeteer');
-    const qrcode = require('qrcode-terminal');
+const puppeteer = require('puppeteer');
+const qrcode = require('qrcode-terminal');
 
+async function adicionarBotWhatsApp() {
     let browser;
 
     try {
         browser = await puppeteer.launch({
             headless: false, // Altere para true para testes finais
-            args: ['--no-sandbox', '--disable-setuid-sandbox', '--display=:99']
+            args: ['--no-sandbox', '--disable-setuid-sandbox']
         });
         const page = await browser.newPage();
 
@@ -18,12 +18,12 @@ async function adicionarBotWhatsApp() {
             await page.waitForSelector('canvas[aria-label="Scan me!"]', { timeout: 60000 });
             const qrContent = await page.evaluate(() => {
                 const qrElement = document.querySelector('canvas[aria-label="Scan me!"]');
-                return qrElement ? qrElement.toDataURL() : null;
+                return qrElement ? qrElement.toDataURL().split(',')[1] : null;
             });
 
             if (qrContent) {
                 console.log('QR code capturado, exibindo no terminal...');
-                qrcode.generate(qrContent, { small: true });
+                qrcode.generate(Buffer.from(qrContent, 'base64').toString('utf8'), { small: true });
 
                 try {
                     await page.waitForSelector('div[role="button"] > span[data-testid="menu"]', { timeout: 60000 });
