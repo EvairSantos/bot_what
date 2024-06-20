@@ -33,7 +33,7 @@ fi
 
 # Instala o pacote qrcode-terminal e axios
 print_status "Instalando os pacotes necessários..."
-npm install --quiet -g qrcode-terminal axios
+sudo npm install --quiet -g qrcode-terminal axios
 
 # Função para gerar e exibir o QR Code
 generate_qr_code() {
@@ -50,31 +50,20 @@ EOF
 scan_qr_code() {
     generate_qr_code
 
-    # Requisição para verificar se o WhatsApp Web foi escaneado
-    local status
-    status=$(axios.get('https://api.whatsapp.com', { maxRedirects: 0 })
-      .then(response => response.data)
-      .catch(error => {
-        if (error.response) {
-          return error.response.status;
-        }
-        return 0;
-      }));
+    print_status "Aguardando escaneamento do QR Code..."
+    # Inicia um loop para verificar se o QR Code foi escaneado
+    while true; do
+        # Verifica se o WhatsApp Web foi acessado
+        local whatsapp_status
+        whatsapp_status=$(curl -sIL https://web.whatsapp.com | grep HTTP/1.1 | awk {'print $2'})
 
-    # Aguarda até que o QR Code seja escaneado
-    while [[ "$status" != "200" ]]; do
+        if [[ "$whatsapp_status" == "200" ]]; then
+            print_status "QR Code escaneado com sucesso!"
+            break
+        fi
+
         sleep 2
-        status=$(axios.get('https://api.whatsapp.com', { maxRedirects: 0 })
-          .then(response => response.data)
-          .catch(error => {
-            if (error.response) {
-              return error.response.status;
-            }
-            return 0;
-          }));
     done
-
-    print_status "QR Code escaneado com sucesso!"
 }
 
 # Executa a função para escanear o QR Code
