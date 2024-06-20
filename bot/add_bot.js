@@ -1,10 +1,11 @@
 const puppeteer = require('puppeteer');
+const qrcode = require('qrcode-terminal');
+const readlineSync = require('readline-sync');
 
 async function adicionarBotWhatsApp() {
     const browser = await puppeteer.launch({
-        product: 'firefox', // Define o navegador como Firefox
         headless: false, // Define se o navegador será exibido ou não (true para não exibir)
-        args: ['--no-sandbox', '--disable-setuid-sandbox'] // Argumentos adicionais
+        args: ['--no-sandbox', '--disable-setuid-sandbox', '--display=:99'] // Argumentos adicionais
     });
 
     const page = await browser.newPage();
@@ -31,11 +32,9 @@ async function adicionarBotWhatsApp() {
             // Função para aguardar e processar comandos do usuário
             async function waitForCommands() {
                 while (true) {
-                    const command = await promptUserInput('Deseja adicionar o bot como novo dispositivo? (y/n): ');
+                    const command = readlineSync.keyIn('', { hideEchoBack: true, mask: '', limit: 'y\n' });
 
                     if (command === 'y') {
-                        console.log('Adicionando o bot como novo dispositivo...');
-                        // Aqui você colocaria a lógica para adicionar o bot
                         console.log('Bot adicionado com sucesso!');
                         break;
                     } else if (command === 'n') {
@@ -57,7 +56,7 @@ async function adicionarBotWhatsApp() {
                             throw new Error('Não foi possível gerar um novo QR code.');
                         }
                     } else {
-                        console.log('Opção inválida. Digite "y" para adicionar o bot ou "n" para gerar um novo QR code.');
+                        console.log('Opção inválida. Digite "y" para confirmar ou "n" para gerar um novo QR code.');
                     }
                 }
             }
@@ -80,20 +79,6 @@ async function adicionarBotWhatsApp() {
         // Fecha o navegador
         await browser.close();
     }
-}
-
-async function promptUserInput(prompt) {
-    const readline = require('readline').createInterface({
-        input: process.stdin,
-        output: process.stdout
-    });
-
-    return new Promise(resolve => {
-        readline.question(prompt, answer => {
-            readline.close();
-            resolve(answer.trim().toLowerCase());
-        });
-    });
 }
 
 adicionarBotWhatsApp();
