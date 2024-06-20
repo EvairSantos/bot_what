@@ -57,9 +57,9 @@ cd "$project_dir" || exit
 print_status "Instalando as dependências do projeto..."
 npm install
 
-# Instalar qrcode-terminal para exibir o QR code no terminal
+# Instalar qrcode-terminal localmente para exibir o QR code no terminal
 print_status "Instalando qrcode-terminal..."
-npm install -g qrcode-terminal
+npm install qrcode-terminal
 
 # Configurar o arquivo .env
 print_status "Configurando o arquivo .env..."
