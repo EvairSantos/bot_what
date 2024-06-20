@@ -38,12 +38,9 @@ sudo npm install --quiet -g qrcode-terminal axios
 # Função para gerar e exibir o QR Code
 generate_qr_code() {
     print_status "Gerando o código QR para escanear..."
-    node <<EOF
-const qrcode = require('qrcode-terminal');
 
-console.log('Escaneie o código QR com seu dispositivo móvel para continuar...');
-qrcode.generate('https://web.whatsapp.com');
-EOF
+    # Comando para gerar o QR Code usando qrcode-terminal
+    node -e "const qrcode = require('qrcode-terminal'); qrcode.generate('https://web.whatsapp.com');"
 }
 
 # Função para escanear o QR Code automaticamente
