@@ -15,33 +15,27 @@ async function adicionarBotWhatsApp() {
         await page.goto('https://web.whatsapp.com', { waitUntil: 'networkidle0' });
 
         while (true) {
-            await page.waitForSelector('div._akau', { timeout: 60000 });
+            await page.waitForSelector('canvas[aria-label="Scan me!"]', { timeout: 60000 });
             const qrContent = await page.evaluate(() => {
-                const qrElement = document.querySelector('div._akau');
-                return qrElement ? qrElement.getAttribute('data-ref') : null;
+                const qrElement = document.querySelector('canvas[aria-label="Scan me!"]');
+                return qrElement ? qrElement.toDataURL() : null;
             });
 
             if (qrContent) {
                 console.log('QR code capturado, exibindo no terminal...');
                 qrcode.generate(qrContent, { small: true });
 
-                await page.waitForSelector('div._alyr', { timeout: 60000 });
-                console.log('Código QR escaneado com sucesso! WhatsApp Web conectado.');
-
-                const isQRCodeRead = await page.evaluate(() => {
-                    const statusElement = document.querySelector('div._al_c');
-                    return statusElement ? statusElement.textContent.includes('Conectado') : false;
-                });
-
-                if (isQRCodeRead) {
-                    console.log('Bot adicionado como novo dispositivo!');
+                try {
+                    await page.waitForSelector('div[role="button"] > span[data-testid="menu"]', { timeout: 60000 });
+                    console.log('Código QR escaneado com sucesso! WhatsApp Web conectado.');
                     break;
-                } else {
+                } catch (error) {
                     console.log('Aguardando o QR code ser lido...');
                     await page.waitForTimeout(5000); // Aguardar 5 segundos e verificar novamente
                 }
             } else {
-                throw new Error('Não foi possível capturar o QR code.');
+                console.log('Não foi possível capturar o QR code. Tentando novamente...');
+                await page.waitForTimeout(5000); // Aguardar 5 segundos e tentar capturar novamente
             }
         }
     } catch (error) {
