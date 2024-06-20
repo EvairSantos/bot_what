@@ -31,10 +31,6 @@ if ! command -v npm &> /dev/null; then
     sudo apt-get install -y npm
 fi
 
-# Instala o pacote qrcode-terminal e axios globalmente
-print_status "Instalando os pacotes necessários..."
-sudo npm install -g qrcode-terminal axios
-
 # Função para gerar e exibir o QR Code
 generate_qr_code() {
     print_status "Gerando o código QR para escanear..."
