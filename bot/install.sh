@@ -72,13 +72,13 @@ print_status "Abrindo o WhatsApp Web para escanear o código QR..."
 print_status "Instalando Puppeteer..."
 npm install puppeteer@10
 
-# Script para abrir o WhatsApp Web e adicionar o bot como novo dispositivo
-print_status "Executando script para adicionar o bot como novo dispositivo..."
-
 # Usar Xvfb para rodar Puppeteer em um ambiente sem GUI
 Xvfb :99 -screen 0 1024x768x16 &
 
-node <<EOF
+# Criar um arquivo Node.js para adicionar o bot como novo dispositivo
+print_status "Criando script Node.js para adicionar o bot..."
+
+cat << 'EOF' > add_bot.js
 const puppeteer = require('puppeteer');
 const qrcode = require('qrcode-terminal');
 
@@ -103,13 +103,24 @@ async function adicionarBotWhatsApp() {
         if (qrContent) {
             console.log('QR code capturado, exibindo no terminal...');
             qrcode.generate(qrContent, { small: true });
+
+            // Loop para monitorar a presença do QR code
+            let qrStillVisible = true;
+            while (qrStillVisible) {
+                // Esperar um intervalo antes de verificar novamente
+                await new Promise(resolve => setTimeout(resolve, 1000));
+
+                qrStillVisible = await page.evaluate(() => {
+                    return !!document.querySelector('div._akau');
+                });
+            }
+            console.log('QR code escaneado! WhatsApp Web conectado.');
         } else {
             throw new Error('Não foi possível capturar o QR code.');
         }
 
-        // Aguardar até que a sessão seja iniciada
+        // Verificar se a sessão foi iniciada com sucesso
         await page.waitForSelector('._2Uw-r', { timeout: 60000 });
-        console.log('Código QR escaneado com sucesso! WhatsApp Web conectado.');
 
     } catch (error) {
         console.error('Erro ao adicionar o bot como novo dispositivo:', error);
@@ -127,5 +138,9 @@ async function adicionarBotWhatsApp() {
 
 adicionarBotWhatsApp();
 EOF
+
+# Executar o script Node.js para adicionar o bot
+print_status "Executando script Node.js para adicionar o bot..."
+node add_bot.js
 
 print_status "Instalação concluída com sucesso!"
