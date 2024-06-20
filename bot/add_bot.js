@@ -25,7 +25,7 @@ async function adicionarBotWhatsApp() {
                 console.log('QR code capturado, exibindo no terminal...');
                 qrcode.generate(qrContent, { small: true });
 
-                await page.waitForSelector('._2Uw-r', { timeout: 60000 });
+                await page.waitForSelector('div._al_c', { timeout: 60000 });
                 console.log('Código QR escaneado com sucesso! WhatsApp Web conectado.');
 
                 const isQRCodeRead = await page.evaluate(() => {
