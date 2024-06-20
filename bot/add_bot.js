@@ -14,12 +14,9 @@ async function adicionarBotWhatsApp() {
         console.log('Navegando para o WhatsApp Web...');
         await page.goto('https://web.whatsapp.com', { waitUntil: 'networkidle0' });
 
-        let qrCodeFound = false;
-
-        // Aguarda até que o elemento com atributo data-ref seja visível
-        await page.waitForSelector('div[data-ref]', { timeout: 0 });
-
         console.log('Aguardando o QR code...');
+        // Espera até que o elemento com atributo data-ref seja visível
+        await page.waitForSelector('div[data-ref]', { timeout: 60000 });
 
         // Captura o atributo data-ref do elemento
         const qrContent = await page.evaluate(() => {
@@ -32,10 +29,9 @@ async function adicionarBotWhatsApp() {
             qrcode.generate(qrContent, { small: true });
 
             // Aguarda até que o elemento após o QR code seja visível
-            await page.waitForSelector('div._aigv _aigw _aigx', { timeout: 0 });
+            await page.waitForSelector('div#app-wrapper-web', { timeout: 60000 });
 
             console.log('Dispositivo adicionado com sucesso!');
-            qrCodeFound = true; // Marca que o QR code foi encontrado e o dispositivo foi adicionado
         } else {
             console.log('Não foi possível capturar o QR code.');
         }
