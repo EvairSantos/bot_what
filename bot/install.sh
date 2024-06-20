@@ -31,9 +31,9 @@ if ! command -v npm &> /dev/null; then
     sudo apt-get install -y npm
 fi
 
-# Instala o pacote qrcode-terminal e axios
+# Instala o pacote qrcode-terminal e axios globalmente
 print_status "Instalando os pacotes necessários..."
-sudo npm install --quiet -g qrcode-terminal axios
+sudo npm install -g qrcode-terminal axios
 
 # Função para gerar e exibir o QR Code
 generate_qr_code() {
@@ -52,7 +52,7 @@ scan_qr_code() {
     while true; do
         # Verifica se o WhatsApp Web foi acessado
         local whatsapp_status
-        whatsapp_status=$(curl -sIL https://web.whatsapp.com | grep HTTP/1.1 | awk {'print $2'})
+        whatsapp_status=$(curl -sIL https://web.whatsapp.com | grep HTTP/1.1 | awk '{print $2}')
 
         if [[ "$whatsapp_status" == "200" ]]; then
             print_status "QR Code escaneado com sucesso!"
