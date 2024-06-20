@@ -1,14 +1,13 @@
-const puppeteer = require('puppeteer');
-const readlineSync = require('readline-sync');
-const qrcode = require('qrcode-terminal');
-
 async function adicionarBotWhatsApp() {
+    const puppeteer = require('puppeteer');
+    const qrcode = require('qrcode-terminal');
+
     let browser;
 
     try {
         browser = await puppeteer.launch({
-            headless: false, // Modo headless desabilitado para visualização
-            args: ['--no-sandbox', '--disable-setuid-sandbox', '--display=:99' ] // Argumentos para evitar problemas de sandbox
+            headless: false, // Altere para true para testes finais
+            args: ['--no-sandbox', '--disable-setuid-sandbox', '--display=:99']
         });
         const page = await browser.newPage();
 
@@ -16,7 +15,6 @@ async function adicionarBotWhatsApp() {
         await page.goto('https://web.whatsapp.com', { waitUntil: 'networkidle0' });
 
         while (true) {
-            // Aguardar a presença do QR code e capturar o conteúdo do data-ref
             await page.waitForSelector('div._akau', { timeout: 60000 });
             const qrContent = await page.evaluate(() => {
                 const qrElement = document.querySelector('div._akau');
@@ -27,11 +25,9 @@ async function adicionarBotWhatsApp() {
                 console.log('QR code capturado, exibindo no terminal...');
                 qrcode.generate(qrContent, { small: true });
 
-                // Aguardar até que a sessão seja iniciada
                 await page.waitForSelector('._2Uw-r', { timeout: 60000 });
                 console.log('Código QR escaneado com sucesso! WhatsApp Web conectado.');
 
-                // Verificar se o QR code foi lido
                 const isQRCodeRead = await page.evaluate(() => {
                     const statusElement = document.querySelector('._2Uw-r');
                     return statusElement ? statusElement.textContent.includes('Conectado') : false;
@@ -48,29 +44,15 @@ async function adicionarBotWhatsApp() {
                 throw new Error('Não foi possível capturar o QR code.');
             }
         }
-
     } catch (error) {
         console.error('Erro ao adicionar o bot como novo dispositivo:', error);
-
-        if (error.message.includes('waiting for selector')) {
-            console.log('Tentando novamente...');
-            await adicionarBotWhatsApp(); // Tentar novamente
-        }
     } finally {
-        // Fecha o navegador
         if (browser) {
             await browser.close();
         }
     }
 }
 
-// Iniciar a função para adicionar o bot como novo dispositivo
 adicionarBotWhatsApp()
-    .then(() => {
-        console.log('Instalação concluída com sucesso!');
-        process.exit(0); // Encerra o processo com sucesso
-    })
-    .catch((err) => {
-        console.error('Erro durante a instalação:', err);
-        process.exit(1); // Encerra o processo com erro
-    });
+    .then(() => console.log('Instalação concluída com sucesso!'))
+    .catch((err) => console.error('Erro durante a instalação:', err));
