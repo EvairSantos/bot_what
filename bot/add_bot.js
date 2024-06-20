@@ -14,10 +14,12 @@ async function adicionarBotWhatsApp() {
         console.log('Navegando para o WhatsApp Web...');
         await page.goto('https://web.whatsapp.com', { waitUntil: 'networkidle0' });
 
-        while (true) {
+        let qrCodeFound = false;
+
+        while (!qrCodeFound) {
             try {
                 console.log('Aguardando o QR code...');
-                await page.waitForSelector('canvas[data-ref]', { timeout: 120000 });
+                await page.waitForSelector('canvas[data-ref]', { timeout: 60000 });
 
                 const qrContent = await page.evaluate(() => {
                     const qrElement = document.querySelector('canvas[data-ref]');
@@ -35,31 +37,29 @@ async function adicionarBotWhatsApp() {
                     // Espera até que o QR code desapareça, indicando que foi lido
                     await page.waitForFunction(
                         () => document.querySelector('canvas[data-ref]') === null,
-                        { timeout: 120000 }
+                        { timeout: 60000 }
                     );
 
                     console.log('Código QR escaneado com sucesso! WhatsApp Web conectado.');
 
+                    // Verifica se está conectado após escanear o QR code
                     const isConnected = await page.evaluate(() => {
                         return document.querySelector('div[data-testid="chatlist"]') !== null;
                     });
 
                     if (isConnected) {
                         console.log('Bot adicionado como novo dispositivo!');
-                        break;
+                        qrCodeFound = true; // Seta como true para sair do loop
                     } else {
-                        console.log('Aguardando o QR code ser lido...');
-                        await page.waitForTimeout(5000); // Aguardar 5 segundos e verificar novamente
+                        console.log('Aguardando confirmação de conexão...');
+                        await page.waitForTimeout(5000); // Aguarda 5 segundos e verifica novamente
                     }
                 } else {
                     throw new Error('Não foi possível capturar o QR code.');
                 }
             } catch (error) {
                 console.error('Erro ao capturar o QR code:', error);
-                await page.screenshot({ path: 'erro_qr.png' }); // Salva uma captura de tela para depuração
-                console.log('Captura de tela salva como "erro_qr.png"');
-                await page.reload({ waitUntil: ["networkidle0", "domcontentloaded"] }); // Recarregar a página para tentar novamente
-                await page.waitForTimeout(5000); // Aguardar 5 segundos antes de tentar novamente
+                await page.reload({ waitUntil: ["networkidle0", "domcontentloaded"] }); // Recarrega a página para tentar novamente
             }
         }
     } catch (error) {
