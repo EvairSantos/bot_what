@@ -19,14 +19,12 @@ async function adicionarBotWhatsApp() {
         while (!qrCodeFound) {
             try {
                 console.log('Aguardando o QR code...');
-                // Espera até que o elemento <canvas> com atributo data-ref seja visível
-                await page.waitForFunction(() => {
-                    const qrElement = document.querySelector('canvas[data-ref]');
-                    return qrElement && qrElement.getAttribute('data-ref');
-                }, { timeout: 60000 });
+                // Espera até que o elemento com atributo data-ref seja visível
+                await page.waitForSelector('div[data-ref]', { timeout: 60000 });
 
+                // Captura o atributo data-ref do elemento
                 const qrContent = await page.evaluate(() => {
-                    const qrElement = document.querySelector('canvas[data-ref]');
+                    const qrElement = document.querySelector('div[data-ref]');
                     return qrElement ? qrElement.getAttribute('data-ref') : null;
                 });
 
@@ -34,32 +32,22 @@ async function adicionarBotWhatsApp() {
                     console.log('QR code capturado, exibindo no terminal...');
                     qrcode.generate(qrContent, { small: true });
 
-                    // Espera até que o QR code desapareça, indicando que foi lido
-                    await page.waitForFunction(
-                        () => !document.querySelector('canvas[data-ref]'),
-                        { timeout: 60000 }
-                    );
+                    // Aguarda até que o QR code seja lido no WhatsApp Web
+                    await page.waitForFunction(() => {
+                        const statusElement = document.querySelector('div._13HPh');
+                        return statusElement ? statusElement.textContent.includes('Clique para acessar') : false;
+                    }, { timeout: 0 });
 
                     console.log('Código QR escaneado com sucesso! WhatsApp Web conectado.');
-
-                    // Verifica se está conectado após escanear o QR code
-                    const isConnected = await page.evaluate(() => {
-                        return document.querySelector('div[data-testid="chatlist"]') !== null;
-                    });
-
-                    if (isConnected) {
-                        console.log('Bot adicionado como novo dispositivo!');
-                        qrCodeFound = true; // Seta como true para sair do loop
-                    } else {
-                        console.log('Aguardando confirmação de conexão...');
-                        await page.waitForTimeout(5000); // Aguarda 5 segundos e verifica novamente
-                    }
+                    qrCodeFound = true; // Marca que o QR code foi encontrado e lido
                 } else {
-                    throw new Error('Não foi possível capturar o QR code.');
+                    console.log('Não foi possível capturar o QR code. Tentando novamente...');
+                    await page.waitForTimeout(5000); // Aguarda 5 segundos e tenta novamente
                 }
             } catch (error) {
                 console.error('Erro ao capturar o QR code:', error);
-                await page.reload({ waitUntil: ["networkidle0", "domcontentloaded"] }); // Recarrega a página para tentar novamente
+                // Pode ser necessário atualizar a página aqui, caso o tempo de espera tenha sido excedido
+                await page.reload({ waitUntil: 'networkidle0' });
             }
         }
     } catch (error) {
