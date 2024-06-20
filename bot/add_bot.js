@@ -3,10 +3,10 @@ const qrcode = require('qrcode-terminal');
 const readlineSync = require('readline-sync');
 
 async function adicionarBotWhatsApp() {
-    const browser = await puppeteer.launch({
-        headless: false,
-        args: ['--no-sandbox', '--disable-setuid-sandbox']
-    });
+const browser = await puppeteer.launch({
+    headless: true,
+    args: ['--no-sandbox', '--disable-setuid-sandbox']
+});
     const page = await browser.newPage();
 
     try {
