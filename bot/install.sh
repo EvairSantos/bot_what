@@ -84,7 +84,7 @@ const qrcode = require('qrcode-terminal');
 
 async function adicionarBotWhatsApp() {
     const browser = await puppeteer.launch({
-        headless: false, // Alterar para true para rodar headless
+        headless: true, // Alterado para true para rodar headless
         args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-gpu']
     });
 
