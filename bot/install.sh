@@ -61,6 +61,10 @@ npm install
 print_status "Instalando qrcode-terminal..."
 npm install qrcode-terminal
 
+# Instalar readline-sync para captura de entrada do usuário
+print_status "Instalando readline-sync..."
+npm install readline-sync
+
 # Configurar o arquivo .env
 print_status "Configurando o arquivo .env..."
 echo "PORT=3000" > .env
