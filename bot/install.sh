@@ -89,7 +89,7 @@ async function adicionarBotWhatsApp() {
         await page.goto('https://web.whatsapp.com', { waitUntil: 'networkidle0' });
 
         // Aumentar o tempo limite para 2 minutos
-        await page.waitForSelector('canvas[aria-label="Scan me!"]', { timeout: 120000 });
+        await page.waitForSelector('div._akau canvas[aria-label="Scan me!"]', { timeout: 120000 });
         console.log('Por favor, escaneie o código QR com seu dispositivo móvel.');
 
         // Aguardar até que a sessão seja iniciada
